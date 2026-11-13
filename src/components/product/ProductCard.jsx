@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { ShoppingBag, Star, Check } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ShoppingBag, Star, Check, Eye } from 'lucide-react'
 import WishlistButton from '../wishlist/WishlistButton'
 import { useCart } from '../../context/CartContext'
 
 export default function ProductCard({ product, onQuickView }) {
   const { addToCart } = useCart()
+  const navigate = useNavigate()
   const [isAdded, setIsAdded] = useState(false)
 
   const handleAddToCart = (e) => {
@@ -15,6 +17,11 @@ export default function ProductCard({ product, onQuickView }) {
   }
 
   const handleCardClick = () => {
+    navigate(`/product/${product.slug || product.id}`)
+  }
+
+  const handleQuickView = (e) => {
+    e.stopPropagation()
     if (onQuickView) onQuickView(product)
   }
 
@@ -49,6 +56,17 @@ export default function ProductCard({ product, onQuickView }) {
 
             <WishlistButton product={product} size="sm" />
           </div>
+
+          {/* Quick View hover overlay */}
+          {onQuickView && (
+            <button
+              onClick={handleQuickView}
+              className="absolute bottom-2.5 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1.5 px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-xl text-[10px] font-bold text-[#103321] shadow-sm border border-gray-100 whitespace-nowrap"
+            >
+              <Eye className="w-3 h-3" />
+              Quick View
+            </button>
+          )}
         </div>
 
         {/* Product Information */}

@@ -3,13 +3,12 @@ import { CartProvider, useCart } from './context/CartContext'
 import { WishlistProvider } from './context/WishlistContext'
 import HomePage from './pages/HomePage'
 import ShopPage from './pages/ShopPage'
+import ProductDetailsPage from './pages/ProductDetailsPage'
 import { CheckCircle2 } from 'lucide-react'
 
 function GlobalNotification() {
   const { notification } = useCart()
-
   if (!notification) return null
-
   return (
     <div className="fixed top-20 right-6 z-50 bg-[#103321] text-white px-4 py-3 rounded-2xl shadow-2xl border border-[#95C623] flex items-center gap-3 animate-slideDown">
       <CheckCircle2 className="w-5 h-5 text-[#95C623] shrink-0" />
@@ -27,6 +26,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/shop" element={<ShopPage />} />
+            <Route path="/product/:slug" element={<ProductDetailsPage />} />
             <Route path="*" element={<HomePage />} />
           </Routes>
         </WishlistProvider>
