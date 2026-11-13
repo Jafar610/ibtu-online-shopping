@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@theme {
+  --color-forest: #103321;
+  --color-forest-dark: #0b2216;
+  --color-forest-light: #16462c;
+  --color-lime: #95C623;
+  --color-lime-hover: #82ad1e;
+  --color-lime-light: #b4e04a;
+  --color-offwhite: #F8F9FA;
+  --color-dark: #1A1A1A;
+  --font-serif: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif;
+  --font-ethiopic: 'Noto Sans Ethiopic', 'Plus Jakarta Sans', sans-serif;
+}
+
+:root {
+  font-family: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif;
+  color: #1A1A1A;
+  background-color: #F8F9FA;
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #103321;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #95C623;
+}
+
+/* Hide scrollbar for clean tab carousels */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Ethiopian Tibeb Pattern Background Generator */
+.bg-tibeb-pattern {
+  background-color: #103321;
+  background-image: radial-gradient(rgba(149, 198, 35, 0.18) 1.2px, transparent 1.2px),
+                    radial-gradient(rgba(255, 255, 255, 0.1) 1.2px, transparent 1.2px);
+  background-size: 24px 24px;
+  background-position: 0 0, 12px 12px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideRight {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slideDown {
+  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slideRight {
+  animation: slideRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
