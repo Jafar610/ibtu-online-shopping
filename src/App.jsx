@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { CartProvider, useCart } from './context/CartContext'
 import { WishlistProvider } from './context/WishlistContext'
 import HomePage from './pages/HomePage'
+import ShopPage from './pages/ShopPage'
 import { CheckCircle2 } from 'lucide-react'
 
 function GlobalNotification() {
@@ -25,6 +26,7 @@ export default function App() {
           <GlobalNotification />
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/shop" element={<ShopPage />} />
             <Route path="*" element={<HomePage />} />
           </Routes>
         </WishlistProvider>

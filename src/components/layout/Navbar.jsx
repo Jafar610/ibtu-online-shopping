@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import {
   Search,
   Heart,
@@ -17,6 +18,9 @@ export default function Navbar({
   onOpenMobileMenu,
   onSelectCategory,
 }) {
+  const location = useLocation()
+  const isShop = location.pathname === '/shop'
+  const isHome = location.pathname === '/'
   const [isScrolled, setIsScrolled] = useState(false)
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false)
   const [isAccountOpen, setIsAccountOpen] = useState(false)
@@ -57,7 +61,7 @@ export default function Navbar({
             </button>
 
             {/* ibtu Brand Logo & Name */}
-            <a href="#" className="flex items-center gap-3 group">
+            <Link to="/" className="flex items-center gap-3 group">
               <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden border-2 border-[#95C623] shadow-sm bg-white p-0.5 transition-transform duration-300 group-hover:scale-105">
                 <img
                   src="/src/assets/logo.jpg"
@@ -80,24 +84,32 @@ export default function Navbar({
                   ሀበሻን ጥበብ
                 </span>
               </div>
-            </a>
+            </Link>
           </div>
 
           {/* Center: Desktop Navigation links */}
           <nav className="hidden lg:flex items-center gap-8">
-            <a
-              href="#"
-              className="text-sm font-medium text-white hover:text-[#95C623] transition-colors relative py-1 after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-[#95C623] after:scale-x-100"
+            <Link
+              to="/"
+              className={`text-sm font-medium transition-colors relative py-1 ${
+                isHome
+                  ? 'text-white after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-[#95C623] after:scale-x-100'
+                  : 'text-white/90 hover:text-[#95C623]'
+              }`}
             >
               Home
-            </a>
+            </Link>
 
-            <a
-              href="#new-arrivals"
-              className="text-sm font-medium text-white/90 hover:text-[#95C623] transition-colors relative py-1 hover:after:w-full"
+            <Link
+              to="/shop"
+              className={`text-sm font-medium transition-colors relative py-1 ${
+                isShop
+                  ? 'text-[#95C623] after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-[#95C623]'
+                  : 'text-white/90 hover:text-[#95C623]'
+              }`}
             >
               Shop
-            </a>
+            </Link>
 
             {/* Categories dropdown */}
             <div
