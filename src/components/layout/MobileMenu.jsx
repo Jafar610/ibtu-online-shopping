@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { X, ChevronRight, ChevronDown, Heart, ShoppingBag, Phone, MapPin } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { X, ChevronRight, ChevronDown, Heart, ShoppingBag, Phone, MapPin, User, LogIn, LogOut } from 'lucide-react'
 import { categories } from '../../data/categories'
 import { useWishlist } from '../../context/WishlistContext'
 import { useCart } from '../../context/CartContext'
+import { useAuth } from '../../context/AuthContext'
 
 export default function MobileMenu({
   isOpen,
@@ -12,6 +14,7 @@ export default function MobileMenu({
   const [categoriesExpanded, setCategoriesExpanded] = useState(true)
   const { wishlistCount } = useWishlist()
   const { totalItems, openCart } = useCart()
+  const { user, isAuthenticated, logout } = useAuth()
 
   if (!isOpen) return null
 
@@ -79,19 +82,61 @@ export default function MobileMenu({
           </a>
         </div>
 
+        {/* Account Info/Auth Section */}
+        <div className="px-4 py-2.5 bg-black/15 border-b border-white/10">
+          {isAuthenticated ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-[#95C623] text-[#103321] flex items-center justify-center font-bold text-xs">
+                  {user?.avatar || <User className="w-3.5 h-3.5" />}
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-bold text-white leading-tight">{user?.name || user?.firstName}</p>
+                  <p className="text-[10px] text-white/60 leading-tight">{user?.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={logout}
+                className="p-1.5 rounded-lg text-white/60 hover:text-red-400 hover:bg-white/10 transition-colors"
+                title="Sign Out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link
+                to="/login"
+                onClick={onClose}
+                className="flex-1 py-1.5 px-3 rounded-lg bg-[#95C623] text-[#103321] text-xs font-bold text-center flex items-center justify-center gap-1.5 hover:bg-[#82ad1e] transition-colors"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Sign In</span>
+              </Link>
+              <Link
+                to="/register"
+                onClick={onClose}
+                className="flex-1 py-1.5 px-3 rounded-lg border border-white/30 text-white text-xs font-semibold text-center hover:bg-white/10 transition-colors"
+              >
+                <span>Register</span>
+              </Link>
+            </div>
+          )}
+        </div>
+
         {/* Navigation Links */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
-          <a
-            href="#hero"
+          <Link
+            to="/"
             onClick={onClose}
             className="flex items-center justify-between py-3 px-3 rounded-xl hover:bg-white/10 text-sm font-semibold text-white hover:text-[#95C623] transition-colors"
           >
             <span>Home</span>
             <ChevronRight className="w-4 h-4 text-white/40" />
-          </a>
+          </Link>
 
-          <a
-            href="#new-arrivals"
+          <Link
+            to="/shop"
             onClick={onClose}
             className="flex items-center justify-between py-3 px-3 rounded-xl hover:bg-white/10 text-sm font-semibold text-white hover:text-[#95C623] transition-colors"
           >
@@ -102,7 +147,7 @@ export default function MobileMenu({
               </span>
             </span>
             <ChevronRight className="w-4 h-4 text-white/40" />
-          </a>
+          </Link>
 
           {/* Categories Accordion */}
           <div>

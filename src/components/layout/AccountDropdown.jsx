@@ -1,32 +1,58 @@
 import { useState } from 'react'
-import { User, LogIn, UserPlus, Package, Heart, LogOut, X, Sparkles } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { User, LogIn, UserPlus, Package, Heart, LogOut, X, Sparkles, ExternalLink } from 'lucide-react'
 import Button from '../common/Button'
+import { useAuth } from '../../context/AuthContext'
 
 export default function AccountDropdown({ isOpen, onClose }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const { user, isAuthenticated, login, register, logout } = useAuth()
   const [activeTab, setActiveTab] = useState('login') // 'login' | 'register'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
-  const [userProfile, setUserProfile] = useState({
-    name: 'Almaz Bekele',
-    email: 'almaz.b@example.com',
-  })
+  const [formError, setFormError] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
 
   if (!isOpen) return null
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault()
-    setIsLoggedIn(true)
-    if (name) {
-      setUserProfile({ name, email })
+    setFormError(null)
+    setSubmitting(true)
+
+    if (activeTab === 'login') {
+      const res = await login({ email, password })
+      setSubmitting(false)
+      if (res.success) {
+        onClose()
+      } else {
+        setFormError(res.error || 'Invalid credentials.')
+      }
+    } else {
+      const parts = name.trim().split(' ')
+      const firstName = parts[0] || 'Customer'
+      const lastName = parts.slice(1).join(' ') || 'ibtu'
+      const res = await register({
+        firstName,
+        lastName,
+        email,
+        phone: '+251 91 000 0000',
+        password,
+      })
+      setSubmitting(false)
+      if (res.success) {
+        onClose()
+      } else {
+        setFormError(res.error || 'Registration failed.')
+      }
     }
   }
 
   const handleLogout = () => {
-    setIsLoggedIn(false)
+    logout()
     setEmail('')
     setPassword('')
+    setName('')
   }
 
   return (
@@ -35,15 +61,19 @@ export default function AccountDropdown({ isOpen, onClose }) {
       <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 p-5 z-50 text-[#1A1A1A] animate-fadeIn">
         <div className="flex items-center justify-between pb-3 border-b border-gray-100">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-[#103321] text-[#95C623] flex items-center justify-center font-bold">
-              <User className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-full bg-[#103321] text-[#95C623] flex items-center justify-center font-bold text-xs">
+              {isAuthenticated && user?.avatar ? (
+                user.avatar
+              ) : (
+                <User className="w-4 h-4" />
+              )}
             </div>
             <div>
               <h3 className="text-sm font-bold text-[#103321]">
-                {isLoggedIn ? userProfile.name : 'Welcome to ibtu'}
+                {isAuthenticated ? (user.name || user.firstName) : 'Welcome to ibtu'}
               </h3>
               <p className="text-[11px] text-gray-500">
-                {isLoggedIn ? userProfile.email : 'ሀበሻን ጥበብ የፋሽን መድረክ'}
+                {isAuthenticated ? user.email : 'ሀበሻን ጥበብ የፋሽን መድረክ'}
               </p>
             </div>
           </div>
@@ -55,24 +85,24 @@ export default function AccountDropdown({ isOpen, onClose }) {
           </button>
         </div>
 
-        {isLoggedIn ? (
+        {isAuthenticated ? (
           <div className="pt-4 space-y-2">
             <div className="bg-[#95C623]/10 p-3 rounded-xl flex items-center gap-2 text-xs text-[#103321] font-medium">
               <Sparkles className="w-4 h-4 text-[#95C623] shrink-0" />
-              <span>ibtu VIP Member: Enjoy 10% off your next purchase!</span>
+              <span>ibtu Customer Member: Enjoy exclusive Ethiopian fashion perks!</span>
             </div>
 
             <nav className="pt-2 space-y-1 text-sm font-medium">
-              <a
-                href="#orders"
+              <Link
+                to="/shop"
                 onClick={onClose}
                 className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-[#103321]"
               >
                 <Package className="w-4 h-4 text-gray-400" />
-                <span>My Orders & Tracking</span>
-              </a>
+                <span>Shop New Collections</span>
+              </Link>
               <a
-                href="#wishlist"
+                href="#wishlist-section"
                 onClick={onClose}
                 className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-[#103321]"
               >
@@ -96,7 +126,7 @@ export default function AccountDropdown({ isOpen, onClose }) {
             {/* Tabs */}
             <div className="flex bg-gray-100 p-1 rounded-lg text-xs font-semibold mb-4">
               <button
-                onClick={() => setActiveTab('login')}
+                onClick={() => { setActiveTab('login'); setFormError(null) }}
                 className={`flex-1 py-1.5 rounded-md transition-all cursor-pointer ${
                   activeTab === 'login'
                     ? 'bg-white text-[#103321] shadow-xs'
@@ -106,7 +136,7 @@ export default function AccountDropdown({ isOpen, onClose }) {
                 Sign In
               </button>
               <button
-                onClick={() => setActiveTab('register')}
+                onClick={() => { setActiveTab('register'); setFormError(null) }}
                 className={`flex-1 py-1.5 rounded-md transition-all cursor-pointer ${
                   activeTab === 'register'
                     ? 'bg-white text-[#103321] shadow-xs'
@@ -116,6 +146,12 @@ export default function AccountDropdown({ isOpen, onClose }) {
                 Create Account
               </button>
             </div>
+
+            {formError && (
+              <div className="p-2.5 mb-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-[11px]">
+                {formError}
+              </div>
+            )}
 
             <form onSubmit={handleLoginSubmit} className="space-y-3">
               {activeTab === 'register' && (
@@ -149,9 +185,20 @@ export default function AccountDropdown({ isOpen, onClose }) {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Password
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-medium text-gray-700">
+                    Password
+                  </label>
+                  {activeTab === 'login' && (
+                    <Link
+                      to="/forgot-password"
+                      onClick={onClose}
+                      className="text-[10px] text-[#103321] hover:text-[#95C623] underline"
+                    >
+                      Forgot?
+                    </Link>
+                  )}
+                </div>
                 <input
                   type="password"
                   required
@@ -168,18 +215,29 @@ export default function AccountDropdown({ isOpen, onClose }) {
                 size="sm"
                 className="w-full mt-2"
                 icon={activeTab === 'login' ? LogIn : UserPlus}
+                disabled={submitting}
               >
-                {activeTab === 'login' ? 'Sign In to ibtu' : 'Create Free Account'}
+                {submitting
+                  ? 'Processing...'
+                  : activeTab === 'login'
+                  ? 'Sign In to ibtu'
+                  : 'Create Free Account'}
               </Button>
             </form>
 
-            <p className="text-[11px] text-center text-gray-400 mt-3">
-              Secured with Ethiopian fashion authentication
-            </p>
+            <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-center">
+              <Link
+                to={activeTab === 'login' ? '/login' : '/register'}
+                onClick={onClose}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#103321] hover:text-[#95C623] transition-colors"
+              >
+                <span>{activeTab === 'login' ? 'Open Full Login Page' : 'Open Full Registration Page'}</span>
+                <ExternalLink className="w-3 h-3" />
+              </Link>
+            </div>
           </div>
         )}
       </div>
     </>
   )
 }
-
