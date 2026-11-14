@@ -30,6 +30,9 @@ router.post('/login', loginValidationRules, validate, AuthController.login);
 // GET /api/auth/me - Retrieve current user profile with roles
 router.get('/me', authenticate, AuthController.getMe);
 
+// GET /api/auth/permissions - Retrieve current user roles and permissions
+router.get('/permissions', authenticate, AuthController.getPermissions);
+
 // POST /api/auth/logout - Logout user
 router.post('/logout', authenticate, AuthController.logout);
 

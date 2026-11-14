@@ -7,6 +7,7 @@
  */
 
 const AuthService = require('../services/auth.service');
+const PermissionService = require('../services/permission.service');
 const ApiResponse = require('../utils/api-response');
 
 class AuthController {
@@ -68,6 +69,24 @@ class AuthController {
         res,
         'User profile retrieved successfully.',
         { user }
+      );
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Get authenticated user's current roles and permissions
+   * GET /api/auth/permissions
+   */
+  static async getPermissions(req, res, next) {
+    try {
+      const authData = await PermissionService.getUserAuthorization(req.user.id);
+
+      return ApiResponse.success(
+        res,
+        'User permissions retrieved successfully',
+        authData
       );
     } catch (err) {
       next(err);

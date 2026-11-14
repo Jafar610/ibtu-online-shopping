@@ -27,6 +27,7 @@ const errorMiddleware = require('./middleware/error.middleware');
 // ─── Route Modules ────────────────────────────────────────────────────────────
 const healthRoutes = require('./routes/health');
 const authRoutes = require('./routes/auth.routes');
+const adminRoutes = require('./routes/admin.routes');
 const productRoutes = require('./routes/products');
 const categoryRoutes = require('./routes/categories');
 const cartRoutes = require('./routes/cart');
@@ -78,6 +79,7 @@ const authLimiter = rateLimit({
 // 5. API Routes
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/cart', cartRoutes);
