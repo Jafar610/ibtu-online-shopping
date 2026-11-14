@@ -2,11 +2,15 @@
  * IBTU E-Commerce Backend
  * src/app.js
  *
- * Express application setup.
- * Registers global middleware, mounts all API routes, and attaches the error handler.
- *
- * This file does NOT call app.listen() — that is done in server.js so that
- * the app can be imported and tested independently.
+ * Express Application Setup
+ * Configured in accordance with Phase 1 Step 3 & Step 4 specifications:
+ * 1. Security middleware (Helmet)
+ * 2. CORS
+ * 3. Request body parsers
+ * 4. API rate limiting
+ * 5. API routes
+ * 6. 404 Not Found middleware
+ * 7. Centralized Error middleware
  */
 
 const express = require('express');
@@ -16,25 +20,25 @@ const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 require('dotenv').config();
 
-const errorHandler = require('./middleware/errorHandler');
+// ─── Middleware ───────────────────────────────────────────────────────────────
+const notFoundMiddleware = require('./middleware/not-found.middleware');
+const errorMiddleware = require('./middleware/error.middleware');
 
-// ─── Route modules ────────────────────────────────────────────────────────────
+// ─── Route Modules ────────────────────────────────────────────────────────────
 const healthRoutes = require('./routes/health');
-const authRoutes = require('./routes/auth');
+const authRoutes = require('./routes/auth.routes');
 const productRoutes = require('./routes/products');
 const categoryRoutes = require('./routes/categories');
 const cartRoutes = require('./routes/cart');
 const orderRoutes = require('./routes/orders');
 
-// ─── App instance ─────────────────────────────────────────────────────────────
+// ─── Express App Instance ─────────────────────────────────────────────────────
 const app = express();
 
-// ─── Security middleware ───────────────────────────────────────────────────────
-
-// helmet sets security-related HTTP headers
+// 1. Security Middleware
 app.use(helmet());
 
-// CORS — allow requests only from the frontend origin
+// 2. CORS - Cross-Origin Resource Sharing
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -44,37 +48,34 @@ app.use(
   })
 );
 
-// ─── Rate limiting ─────────────────────────────────────────────────────────────
-const apiLimiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, message: 'Too many requests. Please try again later.' },
-});
-
-// Apply rate limiting to all /api routes
-app.use('/api', apiLimiter);
-
-// Stricter limiter for auth routes (prevent brute force)
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, message: 'Too many login attempts. Please try again in 15 minutes.' },
-});
-
-// ─── Body parsers ──────────────────────────────────────────────────────────────
+// 3. Body Parsers (Parse JSON & URL-encoded request bodies)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// ─── HTTP request logger (only in development) ─────────────────────────────────
+// Request Logger in development
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// ─── Routes ───────────────────────────────────────────────────────────────────
+// 4. Rate Limiting
+const apiLimiter = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 15 * 60 * 1000,
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS, 10) || 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests. Please try again later.' },
+});
+app.use('/api', apiLimiter);
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30, // 30 requests per 15 minutes for auth endpoints
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many authentication attempts. Please try again later.' },
+});
+
+// 5. API Routes
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/products', productRoutes);
@@ -82,12 +83,10 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 
-// 404 handler — catch any route not matched above
-app.use((req, res) => {
-  res.status(404).json({ success: false, message: `Route ${req.method} ${req.url} not found.` });
-});
+// 6. 404 Not Found Middleware (catches any unmatched route)
+app.use(notFoundMiddleware);
 
-// ─── Global error handler (must be last) ──────────────────────────────────────
-app.use(errorHandler);
+// 7. Centralized Error Middleware (must be the last middleware in the pipeline)
+app.use(errorMiddleware);
 
 module.exports = app;
