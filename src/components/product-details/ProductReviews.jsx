@@ -20,7 +20,7 @@ function RatingBar({ stars, count, total }) {
   )
 }
 
-function WriteReviewModal({ onClose, product }) {
+function WriteReviewModal({ onClose }) {
   const [rating, setRating] = useState(0)
   const [hovered, setHovered] = useState(0)
   const [title, setTitle] = useState('')
@@ -244,7 +244,7 @@ export default function ProductReviews({ product }) {
       )}
 
       {isWriteOpen && (
-        <WriteReviewModal onClose={() => setIsWriteOpen(false)} product={product} />
+        <WriteReviewModal onClose={() => setIsWriteOpen(false)} />
       )}
     </section>
   )

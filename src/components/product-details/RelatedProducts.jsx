@@ -1,17 +1,19 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../product/ProductCard'
 import { products as allProducts } from '../../data/products'
 
 export default function RelatedProducts({ currentProduct, onQuickView }) {
-  const related = allProducts
-    .filter(
-      (p) =>
-        p.id !== currentProduct.id &&
-        (p.category === currentProduct.category ||
-          Math.abs(p.price - currentProduct.price) < 2000)
-    )
-    .sort(() => 0.5 - Math.random())
-    .slice(0, 4)
+  const related = useMemo(() => {
+    return allProducts
+      .filter(
+        (p) =>
+          p.id !== currentProduct.id &&
+          (p.category === currentProduct.category ||
+            Math.abs(p.price - currentProduct.price) < 2000)
+      )
+      .slice(0, 4)
+  }, [currentProduct.id, currentProduct.category, currentProduct.price])
 
   if (related.length === 0) return null
 
