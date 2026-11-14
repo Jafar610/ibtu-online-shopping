@@ -29,7 +29,7 @@ const healthRoutes = require('./routes/health');
 const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
 const productRoutes = require('./routes/products');
-const categoryRoutes = require('./routes/categories');
+const categoryRoutes = require('./routes/category.routes');
 const cartRoutes = require('./routes/cart');
 const orderRoutes = require('./routes/orders');
 
