@@ -32,6 +32,7 @@ const productRoutes = require('./routes/product.routes');
 const categoryRoutes = require('./routes/category.routes');
 const cartRoutes = require('./routes/cart');
 const orderRoutes = require('./routes/orders');
+const variantRoutes = require('./routes/variant.routes');
 
 // ─── Express App Instance ─────────────────────────────────────────────────────
 const app = express();
@@ -84,6 +85,10 @@ app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
+// Variant routes — mounted at /api so the router's full paths are preserved:
+//   /api/products/:productId/variants  (nested under product)
+//   /api/variants/:id                  (direct variant access)
+app.use('/api', variantRoutes);
 
 // 6. 404 Not Found Middleware (catches any unmatched route)
 app.use(notFoundMiddleware);
