@@ -106,8 +106,8 @@ server.listen(5097, async () => {
       body: {
         name: 'Encoder Test Dress',
         slug: `encoder-test-dress-${stamp}`,
-        price: 2500,
-        stock_count: 10,
+        category_id: 1,
+        status: 'active',
       },
     });
     console.log(`[PASS] 5. Data Encoder creates product (products.create permitted): status=${t5.status}`);
@@ -142,7 +142,8 @@ server.listen(5097, async () => {
     });
     console.log(`[PASS] 10. Customer permissions retrieved: count=${t10.body.data?.permissions?.length}, roles=${JSON.stringify(t10.body.data?.roles)}`);
 
-    // Clean up test users
+    // Clean up test users and test products
+    await pool.execute('DELETE FROM products WHERE slug LIKE "encoder-test-dress%"');
     await pool.execute('DELETE FROM users WHERE id IN (?, ?, ?)', [adminUser.id, encoderUser.id, customerUser.id]);
     console.log('Cleaned up test accounts.');
 
