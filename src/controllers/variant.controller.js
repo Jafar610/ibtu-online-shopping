@@ -28,7 +28,7 @@ function assertValid(req) {
 /** Is the caller an Admin or Data Encoder? (checks req.user set by auth middleware) */
 function isStaff(req) {
   if (!req.user) return false;
-  const roles = (req.user.roles || []).map(r => r.toLowerCase());
+  const roles = (req.user.roles || (req.user.role ? [req.user.role] : [])).map(r => String(r).toLowerCase());
   return roles.includes('admin') || roles.includes('data encoder');
 }
 

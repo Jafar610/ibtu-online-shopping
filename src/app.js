@@ -18,6 +18,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
+const path = require('path');
 require('dotenv').config();
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
@@ -33,12 +34,13 @@ const categoryRoutes = require('./routes/category.routes');
 const cartRoutes = require('./routes/cart');
 const orderRoutes = require('./routes/orders');
 const variantRoutes = require('./routes/variant.routes');
+const productImageRoutes = require('./routes/product-image.routes');
 
 // ─── Express App Instance ─────────────────────────────────────────────────────
 const app = express();
 
 // 1. Security Middleware
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 
 // 2. CORS - Cross-Origin Resource Sharing
 app.use(
@@ -53,6 +55,9 @@ app.use(
 // 3. Body Parsers (Parse JSON & URL-encoded request bodies)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Static files for uploaded images
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Request Logger in development
 if (process.env.NODE_ENV === 'development') {
@@ -89,6 +94,7 @@ app.use('/api/orders', orderRoutes);
 //   /api/products/:productId/variants  (nested under product)
 //   /api/variants/:id                  (direct variant access)
 app.use('/api', variantRoutes);
+app.use('/api', productImageRoutes);
 
 // 6. 404 Not Found Middleware (catches any unmatched route)
 app.use(notFoundMiddleware);
