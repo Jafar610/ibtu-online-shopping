@@ -35,6 +35,7 @@ const cartRoutes = require('./routes/cart');
 const orderRoutes = require('./routes/orders');
 const variantRoutes = require('./routes/variant.routes');
 const productImageRoutes = require('./routes/product-image.routes');
+const catalogRoutes = require('./routes/catalog.routes');
 
 // ─── Express App Instance ─────────────────────────────────────────────────────
 const app = express();
@@ -95,6 +96,7 @@ app.use('/api/orders', orderRoutes);
 //   /api/variants/:id                  (direct variant access)
 app.use('/api', variantRoutes);
 app.use('/api', productImageRoutes);
+app.use('/api/catalog', catalogRoutes);
 
 // 6. 404 Not Found Middleware (catches any unmatched route)
 app.use(notFoundMiddleware);
