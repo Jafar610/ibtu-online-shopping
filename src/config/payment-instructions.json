@@ -1,0 +1,30 @@
+{
+  "telebirr": {
+    "provider_name": "Telebirr",
+    "account_name": "Habeshan Tibeb IBTU Retail",
+    "account_number": "+251911223344",
+    "instructions": "Transfer the exact order total to our Telebirr merchant/phone number. After completing the transfer, take a screenshot of the confirmation SMS or transaction screen and upload it on your order confirmation page.",
+    "is_active": true
+  },
+  "cbe_birr": {
+    "provider_name": "CBE Birr",
+    "account_name": "Habeshan Tibeb IBTU Retail",
+    "account_number": "+251911223344",
+    "instructions": "Send the total order amount via CBE Birr to the account number above. Keep the transaction reference number and upload the receipt image.",
+    "is_active": true
+  },
+  "bank_transfer": {
+    "provider_name": "Commercial Bank of Ethiopia (CBE)",
+    "bank_name": "Commercial Bank of Ethiopia",
+    "account_name": "IBTU Habeshan Tibeb Plc",
+    "account_number": "1000123456789",
+    "branch": "Finfinne Branch, Addis Ababa",
+    "instructions": "Deposit or transfer the exact order amount to our bank account. Ensure your Order Number is included in the transfer remark/reference, and upload a clear picture of the deposit slip or mobile banking transfer confirmation.",
+    "is_active": true
+  },
+  "cash_on_delivery": {
+    "provider_name": "Cash on Delivery",
+    "instructions": "Pay in cash or local mobile transfer to the delivery agent upon receiving and inspecting your items at your delivery address. No receipt upload required.",
+    "is_active": true
+  }
+}
