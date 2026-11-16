@@ -87,6 +87,7 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (loading) return
     setNotification(null)
 
     if (!validate()) return
@@ -101,10 +102,15 @@ export default function Register() {
     })
     setLoading(false)
 
-    if (result.success) {
+    if (result.isDemo) {
+      setNotification({
+        type: 'info',
+        message: result.message,
+      })
+    } else if (result.success) {
       setNotification({
         type: 'success',
-        message: `Account created successfully! Welcome to ibtu, ${result.user.firstName}! Redirecting...`,
+        message: `Account created successfully! Welcome to ibtu, ${result.user?.firstName || 'Customer'}! Redirecting...`,
       })
       setTimeout(() => {
         navigate('/shop', { replace: true })

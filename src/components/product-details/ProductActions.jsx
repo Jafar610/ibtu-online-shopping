@@ -100,15 +100,16 @@ export default function ProductActions({
       {/* Secondary actions */}
       <div className="flex gap-2">
         <button
+          type="button"
           onClick={() => toggleWishlist(product)}
           className={`flex-1 py-2.5 rounded-xl border-2 font-semibold text-xs flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer ${
-            isInWishlist(product.id)
+            isInWishlist(product?.id || product?.slug)
               ? 'border-red-400 bg-red-50 text-red-500'
               : 'border-gray-200 text-gray-500 hover:border-[#103321] hover:text-[#103321]'
           }`}
         >
-          <Heart className={`w-4 h-4 ${isInWishlist(product.id) ? 'fill-red-400 stroke-red-400' : ''}`} />
-          {isInWishlist(product.id) ? 'Wishlisted' : 'Add to Wishlist'}
+          <Heart className={`w-4 h-4 ${isInWishlist(product?.id || product?.slug) ? 'fill-red-400 stroke-red-400' : ''}`} />
+          {isInWishlist(product?.id || product?.slug) ? 'Wishlisted' : 'Add to Wishlist'}
         </button>
         <button
           onClick={() => {

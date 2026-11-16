@@ -72,14 +72,14 @@ export default function MobileMenu({
             <ShoppingBag className="w-4 h-4 text-[#95C623]" />
             <span>Bag ({totalItems})</span>
           </button>
-          <a
-            href="#wishlist-section"
+          <Link
+            to="/wishlist"
             onClick={onClose}
             className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-white/10 hover:bg-[#95C623] hover:text-[#103321] text-xs font-semibold transition-all cursor-pointer"
           >
             <Heart className="w-4 h-4 text-[#95C623]" />
             <span>Saved ({wishlistCount})</span>
-          </a>
+          </Link>
         </div>
 
         {/* Account Info/Auth Section */}
@@ -187,6 +187,24 @@ export default function MobileMenu({
               </div>
             )}
           </div>
+
+          <Link
+            to="/about"
+            onClick={onClose}
+            className="flex items-center justify-between py-3 px-3 rounded-xl hover:bg-white/10 text-sm font-semibold text-white hover:text-[#95C623] transition-colors"
+          >
+            <span>About Us</span>
+            <ChevronRight className="w-4 h-4 text-white/40" />
+          </Link>
+
+          <Link
+            to="/contact"
+            onClick={onClose}
+            className="flex items-center justify-between py-3 px-3 rounded-xl hover:bg-white/10 text-sm font-semibold text-white hover:text-[#95C623] transition-colors"
+          >
+            <span>Contact Us</span>
+            <ChevronRight className="w-4 h-4 text-white/40" />
+          </Link>
 
           <a
             href="#promotional-banner"

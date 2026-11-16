@@ -12,6 +12,8 @@ export function WishlistProvider({ children }) {
     }
   })
 
+  const [notification, setNotification] = useState(null)
+
   useEffect(() => {
     try {
       localStorage.setItem('ibtu_wishlist', JSON.stringify(wishlistItems))
@@ -20,22 +22,59 @@ export function WishlistProvider({ children }) {
     }
   }, [wishlistItems])
 
+  const showNotification = (message) => {
+    setNotification(message)
+    setTimeout(() => {
+      setNotification((curr) => (curr === message ? null : curr))
+    }, 2800)
+  }
+
   const toggleWishlist = (product) => {
+    if (!product) return
+    const prodId = product.id || product.slug
+
     setWishlistItems((prev) => {
-      const exists = prev.some((item) => item.id === product.id)
+      const exists = prev.some(
+        (item) => String(item.id) === String(prodId) || String(item.slug) === String(prodId)
+      )
       if (exists) {
-        return prev.filter((item) => item.id !== product.id)
+        showNotification(`Removed "${product.name || 'Item'}" from your wishlist`)
+        return prev.filter(
+          (item) => String(item.id) !== String(prodId) && String(item.slug) !== String(prodId)
+        )
       } else {
+        showNotification(`Saved "${product.name || 'Item'}" to your wishlist!`)
         return [...prev, product]
       }
     })
   }
 
-  const isInWishlist = (productId) => {
-    return wishlistItems.some((item) => item.id === productId)
+  const removeFromWishlist = (productId) => {
+    if (!productId) return
+    setWishlistItems((prev) => {
+      const target = prev.find(
+        (item) => String(item.id) === String(productId) || String(item.slug) === String(productId)
+      )
+      if (target) {
+        showNotification(`Removed "${target.name || 'Item'}" from your wishlist`)
+      }
+      return prev.filter(
+        (item) => String(item.id) !== String(productId) && String(item.slug) !== String(productId)
+      )
+    })
   }
 
-  const clearWishlist = () => setWishlistItems([])
+  const isInWishlist = (productId) => {
+    if (!productId) return false
+    return wishlistItems.some(
+      (item) => String(item.id) === String(productId) || String(item.slug) === String(productId)
+    )
+  }
+
+  const clearWishlist = () => {
+    setWishlistItems([])
+    showNotification('Cleared all saved items from wishlist')
+  }
 
   return (
     <WishlistContext.Provider
@@ -43,8 +82,10 @@ export function WishlistProvider({ children }) {
         wishlistItems,
         wishlistCount: wishlistItems.length,
         toggleWishlist,
+        removeFromWishlist,
         isInWishlist,
         clearWishlist,
+        notification,
       }}
     >
       {children}
@@ -59,4 +100,3 @@ export function useWishlist() {
   }
   return context
 }
-

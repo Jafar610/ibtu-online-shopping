@@ -42,17 +42,22 @@ export default function ResetPassword() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (loading) return
     setNotification(null)
 
     if (!validate()) return
 
     setLoading(true)
     try {
-      await authService.resetPassword({
+      const res = await authService.resetPassword({
         email: emailFromUrl,
         newPassword: password,
       })
-      setResetSuccess(true)
+      if (res.isDemo) {
+        setResetSuccess(true)
+      } else {
+        setResetSuccess(true)
+      }
     } catch (err) {
       setNotification({
         type: 'error',
@@ -97,18 +102,24 @@ export default function ResetPassword() {
 
             <div>
               <h3 className="font-serif text-lg font-bold text-[#103321]">
-                Password Reset Successfully!
+                Requirements Verified
               </h3>
               <p className="text-xs text-gray-600 mt-1.5 leading-relaxed">
-                Your account password has been updated. You can now sign in with your new credentials.
+                New password satisfies security complexity criteria.
               </p>
+              <div className="mt-2.5 p-3 rounded-xl bg-white/70 border border-[#95C623]/30 text-left text-[11px] text-gray-700 space-y-1">
+                <p className="font-semibold text-[#103321]">ℹ Frontend Demonstration Note:</p>
+                <p>
+                  Password reset cannot be finalized in database records because the backend authentication API is not yet connected in this milestone.
+                </p>
+              </div>
             </div>
 
             <button
               onClick={() => navigate('/login')}
               className="w-full py-3 rounded-xl bg-[#103321] text-white font-bold text-xs sm:text-sm hover:bg-[#184a30] transition-colors cursor-pointer"
             >
-              Sign In to Your Account
+              Return to Sign In
             </button>
           </div>
         ) : (

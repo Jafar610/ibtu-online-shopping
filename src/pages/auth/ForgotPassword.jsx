@@ -30,6 +30,7 @@ export default function ForgotPassword() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (loading) return
     if (!validate()) return
 
     setLoading(true)
@@ -87,34 +88,27 @@ export default function ForgotPassword() {
 
             <div>
               <h3 className="font-serif text-lg font-bold text-[#103321]">
-                Check Your Inbox
+                Request Validated
               </h3>
               <p className="text-xs text-gray-600 mt-1.5 leading-relaxed">
-                We've sent a password reset link to{' '}
-                <strong className="text-[#103321]">{sentEmail}</strong>. Please check your inbox and spam folder.
+                Email address confirmed for <strong className="text-[#103321]">{sentEmail}</strong>.
               </p>
+              <div className="mt-2.5 p-3 rounded-xl bg-white/70 border border-[#95C623]/30 text-left text-[11px] text-gray-700 space-y-1">
+                <p className="font-semibold text-[#103321]">ℹ Frontend Demonstration Note:</p>
+                <p>
+                  Backend email delivery is not yet connected in this milestone, so no real email was dispatched. When the backend mailing service is configured, secure reset tokens will be emailed to customer accounts.
+                </p>
+              </div>
             </div>
 
-            {/* Test Link to Reset Page directly for convenience during frontend testing */}
+            {/* Link to Reset Page directly for convenience during frontend routing testing */}
             <div className="pt-2">
               <Link
                 to={`/reset-password?email=${encodeURIComponent(sentEmail)}`}
-                className="inline-block text-xs font-bold text-[#103321] bg-[#95C623] px-4 py-2 rounded-xl hover:bg-[#82ad1e] transition-colors"
+                className="inline-block text-xs font-bold text-[#103321] bg-[#95C623] px-4 py-2.5 rounded-xl hover:bg-[#82ad1e] transition-colors"
               >
-                Proceed to Reset Password Page →
+                Test Reset Password Page Route →
               </Link>
-            </div>
-
-            <div className="pt-3 border-t border-gray-200/50 flex items-center justify-center gap-2 text-xs text-gray-500">
-              <span>Didn't receive the email?</span>
-              <button
-                type="button"
-                onClick={handleResend}
-                disabled={loading}
-                className="font-bold text-[#103321] hover:text-[#95C623] underline cursor-pointer"
-              >
-                {loading ? 'Resending...' : 'Resend link'}
-              </button>
             </div>
           </div>
         ) : (

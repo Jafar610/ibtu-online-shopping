@@ -3,7 +3,7 @@ import { useWishlist } from '../../context/WishlistContext'
 
 export default function WishlistButton({ product, className = '', size = 'md' }) {
   const { isInWishlist, toggleWishlist } = useWishlist()
-  const active = isInWishlist(product.id)
+  const active = isInWishlist(product?.id || product?.slug)
 
   const sizeStyles = {
     sm: 'w-7 h-7 p-1.5',

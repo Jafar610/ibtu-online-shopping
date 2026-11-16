@@ -49,6 +49,7 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (loading) return
     setNotification(null)
 
     if (!validate()) return
@@ -57,10 +58,15 @@ export default function Login() {
     const result = await login({ email, password, rememberMe })
     setLoading(false)
 
-    if (result.success) {
+    if (result.isDemo) {
+      setNotification({
+        type: 'info',
+        message: result.message,
+      })
+    } else if (result.success) {
       setNotification({
         type: 'success',
-        message: `Welcome back, ${result.user.name || result.user.firstName}! Redirecting...`,
+        message: `Welcome back, ${result.user?.name || result.user?.firstName || 'Customer'}! Redirecting...`,
       })
       setTimeout(() => {
         const from = location.state?.from?.pathname || '/'

@@ -26,7 +26,7 @@ export default function AccountDropdown({ isOpen, onClose }) {
       if (res.success) {
         onClose()
       } else {
-        setFormError(res.error || 'Invalid credentials.')
+        setFormError(res.message || res.error || 'Invalid credentials.')
       }
     } else {
       const parts = name.trim().split(' ')
@@ -43,7 +43,7 @@ export default function AccountDropdown({ isOpen, onClose }) {
       if (res.success) {
         onClose()
       } else {
-        setFormError(res.error || 'Registration failed.')
+        setFormError(res.message || res.error || 'Registration failed.')
       }
     }
   }
@@ -101,14 +101,14 @@ export default function AccountDropdown({ isOpen, onClose }) {
                 <Package className="w-4 h-4 text-gray-400" />
                 <span>Shop New Collections</span>
               </Link>
-              <a
-                href="#wishlist-section"
+              <Link
+                to="/wishlist"
                 onClick={onClose}
                 className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-[#103321]"
               >
                 <Heart className="w-4 h-4 text-gray-400" />
                 <span>Saved Wishlist</span>
-              </a>
+              </Link>
             </nav>
 
             <div className="pt-3 border-t border-gray-100">

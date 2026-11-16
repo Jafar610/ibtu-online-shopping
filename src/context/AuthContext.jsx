@@ -12,9 +12,11 @@ export function AuthProvider({ children }) {
     setLoading(true)
     setError(null)
     try {
-      const loggedInUser = await authService.login({ email, password, rememberMe })
-      setUser(loggedInUser)
-      return { success: true, user: loggedInUser }
+      const res = await authService.login({ email, password, rememberMe })
+      if (res.success && res.user) {
+        setUser(res.user)
+      }
+      return res
     } catch (err) {
       setError(err.message || 'Failed to sign in. Please try again.')
       return { success: false, error: err.message }
@@ -27,9 +29,11 @@ export function AuthProvider({ children }) {
     setLoading(true)
     setError(null)
     try {
-      const registeredUser = await authService.register(customerData)
-      setUser(registeredUser)
-      return { success: true, user: registeredUser }
+      const res = await authService.register(customerData)
+      if (res.success && res.user) {
+        setUser(res.user)
+      }
+      return res
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.')
       return { success: false, error: err.message }

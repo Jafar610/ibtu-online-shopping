@@ -11,6 +11,7 @@ import {
 import { categories } from '../../data/categories'
 import { useCart } from '../../context/CartContext'
 import { useWishlist } from '../../context/WishlistContext'
+import { useAuth } from '../../context/AuthContext'
 import AccountDropdown from './AccountDropdown'
 
 export default function Navbar({
@@ -21,12 +22,15 @@ export default function Navbar({
   const location = useLocation()
   const isShop = location.pathname === '/shop'
   const isHome = location.pathname === '/'
+  const isAbout = location.pathname === '/about'
+  const isContact = location.pathname === '/contact'
   const [isScrolled, setIsScrolled] = useState(false)
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false)
   const [isAccountOpen, setIsAccountOpen] = useState(false)
 
   const { totalItems, openCart } = useCart()
   const { wishlistCount } = useWishlist()
+  const { user, isAuthenticated } = useAuth()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -175,19 +179,27 @@ export default function Navbar({
               )}
             </div>
 
-            <a
-              href="#about-story"
-              className="text-sm font-medium text-white/90 hover:text-[#95C623] transition-colors py-1"
+            <Link
+              to="/about"
+              className={`text-sm font-medium transition-colors relative py-1 ${
+                isAbout
+                  ? 'text-white after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-[#95C623]'
+                  : 'text-white/90 hover:text-[#95C623]'
+              }`}
             >
               About
-            </a>
+            </Link>
 
-            <a
-              href="#contact"
-              className="text-sm font-medium text-white/90 hover:text-[#95C623] transition-colors py-1"
+            <Link
+              to="/contact"
+              className={`text-sm font-medium transition-colors relative py-1 ${
+                isContact
+                  ? 'text-white after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-[#95C623]'
+                  : 'text-white/90 hover:text-[#95C623]'
+              }`}
             >
               Contact
-            </a>
+            </Link>
           </nav>
 
           {/* Right: Actions (Search, Wishlist, Cart, Account) */}
@@ -203,9 +215,13 @@ export default function Navbar({
             </button>
 
             {/* Wishlist Button */}
-            <a
-              href="#wishlist-section"
-              className="p-2 sm:p-2.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 transition-colors relative cursor-pointer"
+            <Link
+              to="/wishlist"
+              className={`p-2 sm:p-2.5 rounded-full transition-colors relative cursor-pointer ${
+                location.pathname === '/wishlist'
+                  ? 'text-[#95C623] bg-white/10'
+                  : 'text-white/90 hover:text-white hover:bg-white/10'
+              }`}
               aria-label="View wishlist"
               title="Saved items"
             >
@@ -215,7 +231,7 @@ export default function Navbar({
                   {wishlistCount}
                 </span>
               )}
-            </a>
+            </Link>
 
             {/* Shopping Cart Button */}
             <button
@@ -234,19 +250,36 @@ export default function Navbar({
 
             {/* Customer Account Button */}
             <div className="relative">
-              <button
-                onClick={() => setIsAccountOpen(!isAccountOpen)}
-                className="p-2 sm:p-2.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-                aria-label="Customer account"
-                title="Account"
-              >
-                <User className="w-5 h-5" />
-              </button>
+              {isAuthenticated ? (
+                <>
+                  <button
+                    onClick={() => setIsAccountOpen(!isAccountOpen)}
+                    className="p-2 sm:p-2.5 rounded-full text-white/90 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                    aria-label="Customer account"
+                    title={user?.name || 'Account'}
+                  >
+                    <User className="w-5 h-5" />
+                  </button>
 
-              <AccountDropdown
-                isOpen={isAccountOpen}
-                onClose={() => setIsAccountOpen(false)}
-              />
+                  <AccountDropdown
+                    isOpen={isAccountOpen}
+                    onClose={() => setIsAccountOpen(false)}
+                  />
+                </>
+              ) : (
+                <Link
+                  to="/login"
+                  className={`p-2 sm:p-2.5 rounded-full transition-colors cursor-pointer block ${
+                    location.pathname === '/login'
+                      ? 'text-[#95C623] bg-white/10'
+                      : 'text-white/90 hover:text-white hover:bg-white/10'
+                  }`}
+                  aria-label="Sign in"
+                  title="Sign In"
+                >
+                  <User className="w-5 h-5" />
+                </Link>
+              )}
             </div>
           </div>
         </div>

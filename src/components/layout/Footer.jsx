@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import {
   MapPin,
   Phone,
@@ -21,7 +22,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 pb-12 border-b border-white/10">
           {/* Brand Column (4 cols) */}
           <div className="lg:col-span-4 space-y-5">
-            <a href="#" className="flex items-center gap-3">
+            <Link to="/" className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-[#95C623] bg-white p-0.5">
                 <img
                   src="/src/assets/logo.jpg"
@@ -40,7 +41,7 @@ export default function Footer() {
                   ሀበሻን ጥበብ
                 </span>
               </div>
-            </a>
+            </Link>
 
             <p className="text-sm text-white/75 leading-relaxed max-w-sm">
               ibtu is an Ethiopian fashion e-commerce destination celebrating cultural identity, handspun cotton, and authentic Tibeb craftsmanship for the modern world.
@@ -110,24 +111,34 @@ export default function Footer() {
             </h4>
             <ul className="space-y-2.5 text-xs text-white/80">
               <li>
-                <a href="#" className="hover:text-[#95C623] transition-colors">
+                <Link to="/" className="hover:text-[#95C623] transition-colors">
                   Home
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#new-arrivals" className="hover:text-[#95C623] transition-colors">
+                <Link to="/shop" className="hover:text-[#95C623] transition-colors">
                   Shop All
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#categories" className="hover:text-[#95C623] transition-colors">
+                <Link to="/shop" className="hover:text-[#95C623] transition-colors">
                   Collections
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#about-story" className="hover:text-[#95C623] transition-colors">
+                <Link to="/about" className="hover:text-[#95C623] transition-colors">
                   Our Story
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="hover:text-[#95C623] transition-colors">
+                  Contact Us
+                </Link>
+              </li>
+              <li>
+                <Link to="/wishlist" className="hover:text-[#95C623] transition-colors">
+                  Wishlist
+                </Link>
               </li>
               <li>
                 <a href="#faq" className="hover:text-[#95C623] transition-colors">
