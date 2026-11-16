@@ -32,7 +32,9 @@ const adminRoutes = require('./routes/admin.routes');
 const productRoutes = require('./routes/product.routes');
 const categoryRoutes = require('./routes/category.routes');
 const cartRoutes = require('./routes/cart.routes');
-const orderRoutes = require('./routes/orders');
+const orderRoutes = require('./routes/order.routes');
+const adminOrderRoutes = require('./routes/admin-order.routes');
+const adminShipmentRoutes = require('./routes/admin-shipment.routes');
 const variantRoutes = require('./routes/variant.routes');
 const productImageRoutes = require('./routes/product-image.routes');
 const catalogRoutes = require('./routes/catalog.routes');
@@ -98,6 +100,8 @@ app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/admin/orders', adminOrderRoutes);
+app.use('/api/admin/shipments', adminShipmentRoutes);
 // Variant routes — mounted at /api so the router's full paths are preserved:
 //   /api/products/:productId/variants  (nested under product)
 //   /api/variants/:id                  (direct variant access)
