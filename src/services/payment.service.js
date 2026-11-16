@@ -8,6 +8,7 @@
  *  - Customer payment receipt uploads with security checks.
  *  - Shop owner / Admin receipt review (approve / reject).
  *  - Race condition prevention using SELECT ... FOR UPDATE transactions.
+ *  - Coordination of coupon usage transitions (reserved -> applied / cancelled).
  *  - Audit logging of approval and rejection actions.
  *  - Customer notification triggers.
  *  - Private receipt streaming with role-based access control.
@@ -363,6 +364,14 @@ class PaymentService {
         [payment.order_id]
       );
 
+      // 3b. Update Coupon Usage status from 'reserved' to 'applied'
+      await conn.query(
+        `UPDATE coupon_usages
+         SET usage_status = 'applied'
+         WHERE order_id = ? AND usage_status = 'reserved'`,
+        [payment.order_id]
+      );
+
       // 4. Record Audit Log
       await conn.query(
         `INSERT INTO audit_logs (
@@ -511,6 +520,24 @@ class PaymentService {
          WHERE id = ?`,
         [payment.order_id]
       );
+
+      // 3b. Release any reserved coupon usage
+      const [reservedUsages] = await conn.query(
+        `SELECT id, coupon_id FROM coupon_usages
+         WHERE order_id = ? AND usage_status = 'reserved'`,
+        [payment.order_id]
+      );
+
+      for (const cu of reservedUsages) {
+        await conn.query(
+          'UPDATE coupon_usages SET usage_status = "cancelled" WHERE id = ?',
+          [cu.id]
+        );
+        await conn.query(
+          'UPDATE coupons SET usage_count = GREATEST(0, usage_count - 1) WHERE id = ?',
+          [cu.coupon_id]
+        );
+      }
 
       // 4. Record Audit Log
       await conn.query(

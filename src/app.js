@@ -41,6 +41,8 @@ const addressRoutes = require('./routes/address.routes');
 const checkoutRoutes = require('./routes/checkout.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const adminPaymentRoutes = require('./routes/admin-payment.routes');
+const couponRoutes = require('./routes/coupon.routes');
+const adminCouponRoutes = require('./routes/admin-coupon.routes');
 
 // ─── Express App Instance ─────────────────────────────────────────────────────
 const app = express();
@@ -107,6 +109,8 @@ app.use('/api/addresses', addressRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin/payments', adminPaymentRoutes);
+app.use('/api/coupons', couponRoutes);
+app.use('/api/admin/coupons', adminCouponRoutes);
 
 // 6. 404 Not Found Middleware (catches any unmatched route)
 app.use(notFoundMiddleware);

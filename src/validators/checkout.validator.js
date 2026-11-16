@@ -12,9 +12,16 @@ const ALLOWED_PAYMENT_METHODS = ['telebirr', 'cbe_birr', 'bank_transfer', 'cash_
 
 const validateCheckoutPreview = [
   body('shipping_address_id')
-    .optional()
+    .optional({ nullable: true })
     .isInt({ min: 1 })
     .withMessage('shipping_address_id must be a positive integer.'),
+
+  body('coupon_code')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('coupon_code must be between 2 and 50 characters.'),
+
   validate,
 ];
 
@@ -32,6 +39,12 @@ const validateCreateOrder = [
     .bail()
     .isIn(ALLOWED_PAYMENT_METHODS)
     .withMessage(`payment_method must be one of: ${ALLOWED_PAYMENT_METHODS.join(', ')}.`),
+
+  body('coupon_code')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('coupon_code must be between 2 and 50 characters.'),
 
   body('customer_notes')
     .optional({ checkFalsy: true })

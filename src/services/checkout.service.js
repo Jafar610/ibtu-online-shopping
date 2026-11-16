@@ -7,6 +7,7 @@
  * Handles:
  *  - Real-time stock validation and server-side pricing.
  *  - Delivery address validation and snapshotting.
+ *  - Coupon validation, discount calculation, and usage reservation.
  *  - Unique order number & payment reference generation.
  *  - Atomic transactions for order, items, payments, inventory reservation, and cart clearing.
  *  - Inventory movements audit trail.
@@ -16,12 +17,13 @@ const crypto = require('crypto');
 const { pool } = require('../config/database');
 const AppError = require('../utils/app-error');
 const PaymentInstructions = require('../config/payment-instructions');
+const CouponService = require('./coupon.service');
 
 class CheckoutService {
   /**
-   * Preview checkout: calculates subtotals, shipping, and verifies live stock
+   * Preview checkout: calculates subtotals, optional coupon discounts, shipping, and verifies live stock
    */
-  static async previewCheckout(userId, { shippingAddressId } = {}) {
+  static async previewCheckout(userId, { shippingAddressId, couponCode } = {}) {
     // 1. Fetch user's cart
     const [[cart]] = await pool.query('SELECT id FROM carts WHERE user_id = ?', [userId]);
     if (!cart) {
@@ -110,13 +112,35 @@ class CheckoutService {
 
     subtotal = Math.round(subtotal * 100) / 100;
 
-    // 4. Calculate fees (Ethiopian e-commerce model: free shipping for orders >= 2000 ETB, else 150 ETB)
-    const discountAmount = 0.0;
+    // 4. Validate Coupon if provided
+    let discountAmount = 0.0;
+    let couponDetails = null;
+
+    if (couponCode && couponCode.trim()) {
+      const couponValidation = await CouponService.validateCouponForSubtotal({
+        code: couponCode,
+        userId,
+        subtotal,
+      });
+      discountAmount = couponValidation.discount_amount;
+      couponDetails = {
+        id: couponValidation.coupon_id,
+        code: couponValidation.coupon_code,
+        discount_type: couponValidation.discount_type,
+        discount_value: couponValidation.discount_value,
+        discount_amount: discountAmount,
+      };
+    }
+
+    // 5. Calculate fees (Ethiopian e-commerce model: free shipping for orders >= 2000 ETB, else 150 ETB)
     const taxAmount = 0.0;
     const shippingFee = subtotal >= 2000 ? 0.0 : 150.0;
-    const totalAmount = Math.round((subtotal - discountAmount + taxAmount + shippingFee) * 100) / 100;
+    const totalAmount = Math.max(
+      0,
+      Math.round((subtotal - discountAmount + taxAmount + shippingFee) * 100) / 100
+    );
 
-    // 5. Delivery address
+    // 6. Delivery address
     let selectedAddress = null;
     if (shippingAddressId) {
       const [[addr]] = await pool.query(
@@ -142,6 +166,7 @@ class CheckoutService {
       total_items: totalItems,
       subtotal,
       discount_amount: discountAmount,
+      coupon: couponDetails,
       tax_amount: taxAmount,
       shipping_fee: shippingFee,
       shipping_cost: shippingFee,
@@ -181,7 +206,10 @@ class CheckoutService {
   /**
    * Submit and finalize checkout: creates order, reserves inventory, creates payment record, and clears cart
    */
-  static async createOrder(userId, { shipping_address_id, payment_method, customer_notes }) {
+  static async createOrder(
+    userId,
+    { shipping_address_id, payment_method, coupon_code, customer_notes }
+  ) {
     // 1. Fetch and validate delivery address
     const [[address]] = await pool.query(
       'SELECT * FROM customer_addresses WHERE id = ? AND user_id = ?',
@@ -283,12 +311,30 @@ class CheckoutService {
       }
 
       subtotal = Math.round(subtotal * 100) / 100;
-      const discountAmount = 0.0;
+
+      // 5. Validate Coupon inside transaction with row lock
+      let discountAmount = 0.0;
+      let appliedCoupon = null;
+
+      if (coupon_code && coupon_code.trim()) {
+        const couponVal = await CouponService.validateCouponForSubtotal({
+          code: coupon_code,
+          userId,
+          subtotal,
+          conn,
+        });
+        discountAmount = couponVal.discount_amount;
+        appliedCoupon = couponVal;
+      }
+
       const taxAmount = 0.0;
       const shippingFee = subtotal >= 2000 ? 0.0 : 150.0;
-      const totalAmount = Math.round((subtotal - discountAmount + taxAmount + shippingFee) * 100) / 100;
+      const totalAmount = Math.max(
+        0,
+        Math.round((subtotal - discountAmount + taxAmount + shippingFee) * 100) / 100
+      );
 
-      // 5. Generate unique order number
+      // 6. Generate unique order number
       const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
       const randomSuffix = crypto.randomBytes(3).toString('hex').toUpperCase();
       const orderNumber = `IBTU-${dateStr}-${randomSuffix}`;
@@ -297,7 +343,7 @@ class CheckoutService {
       const customerFullName =
         address.recipient_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Customer';
 
-      // 6. Insert Order
+      // 7. Insert Order
       const [orderResult] = await conn.query(
         `INSERT INTO orders (
            order_number,
@@ -348,7 +394,27 @@ class CheckoutService {
 
       const orderId = orderResult.insertId;
 
-      // 7. Insert Order Items & Reserve Inventory
+      // 8. If coupon was applied, create reserved coupon_usages record and increment usage_count
+      if (appliedCoupon) {
+        await conn.query(
+          `INSERT INTO coupon_usages (
+             coupon_id,
+             user_id,
+             order_id,
+             discount_amount,
+             usage_status,
+             used_at
+           ) VALUES (?, ?, ?, ?, 'reserved', NOW())`,
+          [appliedCoupon.coupon_id, userId, orderId, discountAmount]
+        );
+
+        await conn.query(
+          'UPDATE coupons SET usage_count = usage_count + 1 WHERE id = ?',
+          [appliedCoupon.coupon_id]
+        );
+      }
+
+      // 9. Insert Order Items & Reserve Inventory
       for (const item of orderItemsToInsert) {
         // Insert snapshot
         await conn.query(
@@ -411,7 +477,7 @@ class CheckoutService {
         );
       }
 
-      // 8. Payment Provider Label
+      // 10. Payment Provider Label
       const providerLabels = {
         telebirr: 'Telebirr',
         cbe_birr: 'CBE Birr',
@@ -420,7 +486,7 @@ class CheckoutService {
       };
       const paymentProvider = providerLabels[payment_method] || 'Other';
 
-      // 9. Initial Payment Record
+      // 11. Initial Payment Record
       const payRefSuffix = crypto.randomBytes(4).toString('hex').toUpperCase();
       const paymentReference = `PAY-${dateStr}-${payRefSuffix}`;
 
@@ -466,7 +532,7 @@ class CheckoutService {
 
       const paymentId = paymentResult.insertId;
 
-      // 10. Clear Customer's Cart Items
+      // 12. Clear Customer's Cart Items
       await conn.query('DELETE FROM cart_items WHERE cart_id = ?', [cart.id]);
 
       await conn.commit();
@@ -490,6 +556,12 @@ class CheckoutService {
           customer_name: customerFullName,
           customer_phone: address.phone || user.phone,
           customer_email: user.email,
+          coupon: appliedCoupon
+            ? {
+                code: appliedCoupon.coupon_code,
+                discount_amount: discountAmount,
+              }
+            : null,
           items_count: orderItemsToInsert.length,
           placed_at: new Date().toISOString(),
         },

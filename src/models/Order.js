@@ -103,7 +103,27 @@ const Order = {
       };
     }
 
-    return { ...orders[0], items, payment: paymentInfo };
+    // Attach coupon usage if any
+    const [couponUsages] = await pool.query(
+      `SELECT cu.*, c.code AS coupon_code, c.discount_type
+       FROM coupon_usages cu
+       JOIN coupons c ON cu.coupon_id = c.id
+       WHERE cu.order_id = ?
+       LIMIT 1`,
+      [id]
+    );
+
+    const couponInfo = couponUsages[0]
+      ? {
+          coupon_id: couponUsages[0].coupon_id,
+          coupon_code: couponUsages[0].coupon_code,
+          discount_type: couponUsages[0].discount_type,
+          discount_amount: parseFloat(couponUsages[0].discount_amount),
+          usage_status: couponUsages[0].usage_status,
+        }
+      : null;
+
+    return { ...orders[0], items, payment: paymentInfo, coupon: couponInfo };
   },
 
   async findAll(limit = 20, offset = 0) {
@@ -126,6 +146,25 @@ const Order = {
       'UPDATE orders SET order_status = ?, updated_at = NOW() WHERE id = ?',
       [status, id]
     );
+
+    if (status === 'cancelled') {
+      // Release any reserved coupon usages
+      const [couponUsages] = await pool.query(
+        'SELECT id, coupon_id FROM coupon_usages WHERE order_id = ? AND usage_status = "reserved"',
+        [id]
+      );
+      for (const cu of couponUsages) {
+        await pool.query(
+          'UPDATE coupon_usages SET usage_status = "cancelled" WHERE id = ?',
+          [cu.id]
+        );
+        await pool.query(
+          'UPDATE coupons SET usage_count = GREATEST(0, usage_count - 1) WHERE id = ?',
+          [cu.coupon_id]
+        );
+      }
+    }
+
     return result.affectedRows > 0;
   },
 
