@@ -7,18 +7,23 @@ const express = require('express');
 const router = express.Router();
 
 const {
-  createOrder, getMyOrders, getOrder, getAllOrders, updateOrderStatus,
+  getMyOrders,
+  getOrder,
+  getAllOrders,
+  updateOrderStatus,
 } = require('../controllers/orderController');
-const { authenticate, authorizeAdmin } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth.middleware');
+const { requireRole } = require('../middleware/permission.middleware');
 
-// Customer routes
+// All order routes require authentication
 router.use(authenticate);
-router.post('/', createOrder);
+
+// Customer endpoints
 router.get('/', getMyOrders);
 router.get('/:id', getOrder);
 
-// Admin routes
-router.get('/admin/all', authorizeAdmin, getAllOrders);
-router.patch('/admin/:id/status', authorizeAdmin, updateOrderStatus);
+// Admin endpoints
+router.get('/admin/all', requireRole('Admin'), getAllOrders);
+router.patch('/admin/:id/status', requireRole('Admin'), updateOrderStatus);
 
 module.exports = router;

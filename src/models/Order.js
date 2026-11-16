@@ -13,31 +13,25 @@ const Order = {
    */
   async create(orderData) {
     const { user_id, shipping_address, items, total_amount, shipping_fee = 0, payment_method = 'cod' } = orderData;
-    const connection = await require('../config/database').pool.getConnection();
+    const connection = await pool.getConnection();
 
     try {
       await connection.beginTransaction();
 
       // 1. Insert the order header
       const [orderResult] = await connection.execute(
-        `INSERT INTO orders (user_id, shipping_address, total_amount, shipping_fee, payment_method, status)
-         VALUES (?, ?, ?, ?, ?, 'pending')`,
-        [user_id, JSON.stringify(shipping_address), total_amount, shipping_fee, payment_method]
+        `INSERT INTO orders (user_id, shipping_address_line1, total_amount, shipping_fee, order_status, payment_status)
+         VALUES (?, ?, ?, ?, 'pending', 'unpaid')`,
+        [user_id, JSON.stringify(shipping_address), total_amount, shipping_fee]
       );
       const orderId = orderResult.insertId;
 
       // 2. Insert each order item
       for (const item of items) {
         await connection.execute(
-          `INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price, size, color)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [orderId, item.product_id, item.product_name, item.quantity, item.unit_price, item.size || null, item.color || null]
-        );
-
-        // 3. Decrement stock
-        await connection.execute(
-          'UPDATE products SET stock_count = GREATEST(0, stock_count - ?) WHERE id = ?',
-          [item.quantity, item.product_id]
+          `INSERT INTO order_items (order_id, product_id, product_name, sku, quantity, unit_price, total_price, size, color)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [orderId, item.product_id, item.product_name, item.sku || 'N/A', item.quantity, item.unit_price, item.unit_price * item.quantity, item.size || null, item.color || null]
         );
       }
 
@@ -76,7 +70,40 @@ const Order = {
       [id]
     );
 
-    return { ...orders[0], items };
+    const [payments] = await pool.execute(
+      'SELECT * FROM payments WHERE order_id = ? ORDER BY id DESC LIMIT 1',
+      [id]
+    );
+
+    let paymentInfo = null;
+    if (payments[0]) {
+      let tx = {};
+      try {
+        tx = typeof payments[0].transaction_response === 'string'
+          ? JSON.parse(payments[0].transaction_response)
+          : payments[0].transaction_response || {};
+      } catch {}
+
+      paymentInfo = {
+        id: payments[0].id,
+        payment_reference: payments[0].payment_reference,
+        payment_method: payments[0].payment_method,
+        payment_provider: payments[0].payment_provider,
+        amount: parseFloat(payments[0].amount),
+        currency: payments[0].currency,
+        payment_status: payments[0].payment_status,
+        verification_status: tx.verification_status || 'pending',
+        receipt_filename: tx.receipt_filename || null,
+        receipt_url: tx.receipt_filename ? `/api/payments/${payments[0].id}/receipt` : null,
+        uploaded_at: tx.uploaded_at || null,
+        rejection_reason: tx.rejection_reason || null,
+        reviewed_by: tx.reviewed_by_name || null,
+        reviewed_at: tx.reviewed_at || null,
+        paid_at: payments[0].paid_at,
+      };
+    }
+
+    return { ...orders[0], items, payment: paymentInfo };
   },
 
   async findAll(limit = 20, offset = 0) {
@@ -96,7 +123,7 @@ const Order = {
     const allowed = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
     if (!allowed.includes(status)) throw new Error(`Invalid status: ${status}`);
     const [result] = await pool.execute(
-      'UPDATE orders SET status = ?, updated_at = NOW() WHERE id = ?',
+      'UPDATE orders SET order_status = ?, updated_at = NOW() WHERE id = ?',
       [status, id]
     );
     return result.affectedRows > 0;

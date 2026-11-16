@@ -38,6 +38,9 @@ const productImageRoutes = require('./routes/product-image.routes');
 const catalogRoutes = require('./routes/catalog.routes');
 const wishlistRoutes = require('./routes/wishlist.routes');
 const addressRoutes = require('./routes/address.routes');
+const checkoutRoutes = require('./routes/checkout.routes');
+const paymentRoutes = require('./routes/payment.routes');
+const adminPaymentRoutes = require('./routes/admin-payment.routes');
 
 // ─── Express App Instance ─────────────────────────────────────────────────────
 const app = express();
@@ -59,7 +62,7 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Static files for uploaded images
+// Static files for uploaded images (product images)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Request Logger in development
@@ -101,6 +104,9 @@ app.use('/api', productImageRoutes);
 app.use('/api/catalog', catalogRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/addresses', addressRoutes);
+app.use('/api/checkout', checkoutRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/admin/payments', adminPaymentRoutes);
 
 // 6. 404 Not Found Middleware (catches any unmatched route)
 app.use(notFoundMiddleware);
