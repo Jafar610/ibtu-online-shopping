@@ -27,19 +27,27 @@ export function CartProvider({ children }) {
     setNotification(message)
     setTimeout(() => {
       setNotification((curr) => (curr === message ? null : curr))
-    }, 3000)
+    }, 2800)
   }
 
   const addToCart = (product, quantity = 1, selectedSize = null, selectedColor = null) => {
+    if (!product) return
     const size = selectedSize || (product.sizes && product.sizes[0]) || 'Standard'
     const color = selectedColor || (product.colors && product.colors[0]) || 'Default'
-    const itemKey = `${product.id}-${size}-${color}`
+    const itemKey = `${product.id || product.slug}-${size}-${color}`
+    const stockLimit = product.stockCount || 50
 
     setCartItems((prevItems) => {
       const existingIndex = prevItems.findIndex((item) => item.key === itemKey)
       if (existingIndex > -1) {
         const updated = [...prevItems]
-        updated[existingIndex].quantity += quantity
+        const currentQty = updated[existingIndex].quantity
+        const newQty = Math.min(currentQty + quantity, stockLimit)
+        if (newQty === currentQty && currentQty >= stockLimit) {
+          showNotification(`Maximum stock reached (${stockLimit} items).`)
+          return prevItems
+        }
+        updated[existingIndex].quantity = newQty
         return updated
       }
       return [
@@ -47,6 +55,7 @@ export function CartProvider({ children }) {
         {
           key: itemKey,
           id: product.id,
+          slug: product.slug || product.id,
           name: product.name,
           amharicName: product.amharicName,
           price: product.price,
@@ -55,7 +64,8 @@ export function CartProvider({ children }) {
           category: product.category,
           size,
           color,
-          quantity,
+          quantity: Math.min(quantity, stockLimit),
+          stockCount: stockLimit,
         },
       ]
     })
@@ -65,20 +75,38 @@ export function CartProvider({ children }) {
   }
 
   const removeFromCart = (itemKey) => {
-    setCartItems((prev) => prev.filter((item) => item.key !== itemKey))
+    setCartItems((prev) => {
+      const item = prev.find((i) => i.key === itemKey)
+      if (item) {
+        showNotification(`Removed "${item.name}" from your bag`)
+      }
+      return prev.filter((i) => i.key !== itemKey)
+    })
   }
 
   const updateQuantity = (itemKey, newQuantity) => {
-    if (newQuantity <= 0) {
-      removeFromCart(itemKey)
-      return
+    if (newQuantity < 1) {
+      return // Prevent quantity from going below 1
     }
     setCartItems((prev) =>
-      prev.map((item) => (item.key === itemKey ? { ...item, quantity: newQuantity } : item))
+      prev.map((item) => {
+        if (item.key === itemKey) {
+          const maxStock = item.stockCount || 50
+          if (newQuantity > maxStock) {
+            showNotification(`Only ${maxStock} items available in stock.`)
+            return { ...item, quantity: maxStock }
+          }
+          return { ...item, quantity: newQuantity }
+        }
+        return item
+      })
     )
   }
 
-  const clearCart = () => setCartItems([])
+  const clearCart = () => {
+    setCartItems([])
+    showNotification('Cleared your shopping bag')
+  }
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -104,6 +132,7 @@ export function CartProvider({ children }) {
         updateQuantity,
         clearCart,
         notification,
+        showNotification,
       }}
     >
       {children}
@@ -118,4 +147,3 @@ export function useCart() {
   }
   return context
 }
-

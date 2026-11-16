@@ -1,5 +1,7 @@
-import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, Truck, Check } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, Truck, Check, Heart } from 'lucide-react'
 import { useCart } from '../../context/CartContext'
+import { useWishlist } from '../../context/WishlistContext'
 import Button from '../common/Button'
 
 export default function CartDrawer() {
@@ -15,9 +17,29 @@ export default function CartDrawer() {
     progressToFreeShipping,
     remainingForFreeShipping,
     clearCart,
+    showNotification,
   } = useCart()
 
+  const { toggleWishlist } = useWishlist()
+
   if (!isCartOpen) return null
+
+  const handleMoveToWishlist = (item) => {
+    toggleWishlist({
+      id: item.id,
+      slug: item.slug || item.id,
+      name: item.name,
+      amharicName: item.amharicName,
+      price: item.price,
+      originalPrice: item.originalPrice,
+      image: item.image,
+      category: item.category,
+      sizes: item.size ? [item.size] : [],
+      colors: item.color ? [item.color] : [],
+      inStock: true,
+    })
+    removeFromCart(item.key)
+  }
 
   const shippingCost = subtotal >= freeShippingThreshold || subtotal === 0 ? 0 : 250
   const finalTotal = subtotal + shippingCost
@@ -122,13 +144,26 @@ export default function CartDrawer() {
                         <h4 className="text-sm font-bold text-[#103321] leading-snug truncate">
                           {item.name}
                         </h4>
-                        <button
-                          onClick={() => removeFromCart(item.key)}
-                          className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                          title="Remove item"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveToWishlist(item)}
+                            className="text-gray-400 hover:text-red-500 transition-colors p-1 cursor-pointer"
+                            title="Move to wishlist"
+                            aria-label="Move to wishlist"
+                          >
+                            <Heart className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeFromCart(item.key)}
+                            className="text-gray-400 hover:text-red-500 transition-colors p-1 cursor-pointer"
+                            title="Remove item"
+                            aria-label="Remove item"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                       <p className="text-xs text-gray-500 mt-0.5">
                         Size: {item.size} {item.color ? `• ${item.color}` : ''}
@@ -201,6 +236,15 @@ export default function CartDrawer() {
                 </div>
               </div>
 
+              <Link
+                to="/cart"
+                onClick={closeCart}
+                className="w-full py-2.5 rounded-xl border-2 border-[#103321] text-[#103321] hover:bg-[#103321] hover:text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer text-center"
+              >
+                <span>View Full Cart Page</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+
               <Button
                 variant="primary"
                 size="lg"
@@ -208,8 +252,8 @@ export default function CartDrawer() {
                 icon={ArrowRight}
                 iconPosition="right"
                 onClick={() => {
-                  alert(
-                    `Proceeding to checkout with ${totalItems} item(s) totaling ${finalTotal.toLocaleString()} ETB! (Prototype demonstration - Telebirr & CBE Birr ready)`
+                  showNotification(
+                    'Order checkout processing will be available in the upcoming checkout milestone.'
                   )
                 }}
               >

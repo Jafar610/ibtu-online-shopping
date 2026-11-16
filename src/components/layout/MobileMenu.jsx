@@ -189,6 +189,28 @@ export default function MobileMenu({
           </div>
 
           <Link
+            to="/cart"
+            onClick={onClose}
+            className="flex items-center justify-between py-3 px-3 rounded-xl hover:bg-white/10 text-sm font-semibold text-white hover:text-[#95C623] transition-colors"
+          >
+            <span>Shopping Cart</span>
+            <span className="text-xs bg-white/10 text-[#95C623] font-bold px-2 py-0.5 rounded-full">
+              {totalItems}
+            </span>
+          </Link>
+
+          <Link
+            to="/wishlist"
+            onClick={onClose}
+            className="flex items-center justify-between py-3 px-3 rounded-xl hover:bg-white/10 text-sm font-semibold text-white hover:text-[#95C623] transition-colors"
+          >
+            <span>My Wishlist</span>
+            <span className="text-xs bg-white/10 text-[#95C623] font-bold px-2 py-0.5 rounded-full">
+              {wishlistCount}
+            </span>
+          </Link>
+
+          <Link
             to="/about"
             onClick={onClose}
             className="flex items-center justify-between py-3 px-3 rounded-xl hover:bg-white/10 text-sm font-semibold text-white hover:text-[#95C623] transition-colors"

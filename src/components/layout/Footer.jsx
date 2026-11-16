@@ -136,6 +136,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link to="/cart" className="hover:text-[#95C623] transition-colors">
+                  Shopping Cart
+                </Link>
+              </li>
+              <li>
                 <Link to="/wishlist" className="hover:text-[#95C623] transition-colors">
                   Wishlist
                 </Link>

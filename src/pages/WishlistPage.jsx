@@ -34,6 +34,16 @@ export default function WishlistPage() {
 
   const handleAddToCart = (product, e) => {
     e.stopPropagation()
+    const requiresVariantSelection =
+      product.sizes &&
+      product.sizes.length > 1 &&
+      !product.sizes.includes('One Size')
+
+    if (requiresVariantSelection) {
+      setQuickViewProduct(product)
+      return
+    }
+
     const size = (product.sizes && product.sizes[0]) || 'Standard'
     const color = (product.colors && product.colors[0]) || 'Default'
     addToCart(product, 1, size, color)
@@ -70,6 +80,19 @@ export default function WishlistPage() {
 
       {/* Main Content */}
       <main className="flex-1">
+        {/* Breadcrumb Navigation */}
+        <div className="bg-white border-b border-gray-100 py-3">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav className="flex items-center gap-2 text-xs text-gray-500">
+              <Link to="/" className="hover:text-[#103321] transition-colors">
+                Home
+              </Link>
+              <span>/</span>
+              <span className="text-[#103321] font-semibold">Wishlist</span>
+            </nav>
+          </div>
+        </div>
+
         {/* Wishlist Hero Header */}
         <section className="relative bg-[#103321] text-white py-14 sm:py-16 overflow-hidden">
           {/* Subtle Tibeb Background Pattern */}
