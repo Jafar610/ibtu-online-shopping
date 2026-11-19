@@ -1,10 +1,11 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, Truck, Check, Heart } from 'lucide-react'
 import { useCart } from '../../context/CartContext'
 import { useWishlist } from '../../context/WishlistContext'
 import Button from '../common/Button'
 
 export default function CartDrawer() {
+  const navigate = useNavigate()
   const {
     isCartOpen,
     closeCart,
@@ -252,9 +253,8 @@ export default function CartDrawer() {
                 icon={ArrowRight}
                 iconPosition="right"
                 onClick={() => {
-                  showNotification(
-                    'Order checkout processing will be available in the upcoming checkout milestone.'
-                  )
+                  closeCart()
+                  navigate('/checkout')
                 }}
               >
                 Proceed to Checkout

@@ -67,9 +67,11 @@ export default function CartPage() {
   }
 
   const handleProceedToCheckout = () => {
-    setCheckoutNotice(true)
-    showNotification('Order checkout will be available in the upcoming checkout milestone.')
-    setTimeout(() => setCheckoutNotice(false), 5000)
+    if (cartItems.length === 0) {
+      showNotification('Your shopping bag is empty.')
+      return
+    }
+    navigate('/checkout')
   }
 
   const isFreeShipping = subtotal >= freeShippingThreshold && subtotal > 0
