@@ -94,12 +94,20 @@ export default function AccountDropdown({ isOpen, onClose }) {
 
             <nav className="pt-2 space-y-1 text-sm font-medium">
               <Link
-                to="/shop"
+                to="/account"
+                onClick={onClose}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-[#103321]"
+              >
+                <User className="w-4 h-4 text-[#95C623]" />
+                <span className="font-bold text-[#103321]">Account Dashboard</span>
+              </Link>
+              <Link
+                to="/account/orders"
                 onClick={onClose}
                 className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-700 hover:text-[#103321]"
               >
                 <Package className="w-4 h-4 text-gray-400" />
-                <span>Shop New Collections</span>
+                <span>My Orders</span>
               </Link>
               <Link
                 to="/wishlist"

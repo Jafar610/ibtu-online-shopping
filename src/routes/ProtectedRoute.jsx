@@ -1,8 +1,8 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-export default function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth()
+export default function ProtectedRoute({ children, allowedRoles = ['customer'] }) {
+  const { isAuthenticated, loading, user } = useAuth()
   const location = useLocation()
 
   if (loading) {
@@ -13,8 +13,17 @@ export default function ProtectedRoute({ children }) {
     )
   }
 
+  // Unauthenticated users are redirected to login, preserving intended path
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  // Ensure Admin and Data Encoder users are not treated as customers
+  // If allowedRoles is defined and user has a role, verify role is permitted
+  if (allowedRoles && allowedRoles.length > 0 && user?.role) {
+    if (!allowedRoles.includes(user.role)) {
+      return <Navigate to="/" replace />
+    }
   }
 
   return children

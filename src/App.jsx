@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { CartProvider, useCart } from './context/CartContext'
 import { WishlistProvider, useWishlist } from './context/WishlistContext'
 import { AuthProvider } from './context/AuthContext'
+import ProtectedRoute from './routes/ProtectedRoute'
+
 import HomePage from './pages/HomePage'
 import ShopPage from './pages/ShopPage'
 import ProductDetailsPage from './pages/ProductDetailsPage'
@@ -13,6 +15,15 @@ import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword from './pages/auth/ResetPassword'
+
+// Customer Account Dashboard Pages (Phase 5 - Step 5)
+import AccountDashboard from './pages/customer/AccountDashboard'
+import ProfilePage from './pages/customer/ProfilePage'
+import AddressesPage from './pages/customer/AddressesPage'
+import OrdersPage from './pages/customer/OrdersPage'
+import OrderDetailsPage from './pages/customer/OrderDetailsPage'
+import OrderTrackingPage from './pages/customer/OrderTrackingPage'
+
 import { CheckCircle2 } from 'lucide-react'
 
 function GlobalNotification() {
@@ -36,6 +47,7 @@ export default function App() {
           <WishlistProvider>
             <GlobalNotification />
             <Routes>
+              {/* Public Store Pages */}
               <Route path="/" element={<HomePage />} />
               <Route path="/shop" element={<ShopPage />} />
               <Route path="/product/:slug" element={<ProductDetailsPage />} />
@@ -43,10 +55,64 @@ export default function App() {
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/wishlist" element={<WishlistPage />} />
               <Route path="/cart" element={<CartPage />} />
+
+              {/* Authentication Pages */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+
+              {/* Customer Account Routes (Protected - Role: Customer) */}
+              <Route
+                path="/account"
+                element={
+                  <ProtectedRoute allowedRoles={['customer']}>
+                    <AccountDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/account/profile"
+                element={
+                  <ProtectedRoute allowedRoles={['customer']}>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/account/addresses"
+                element={
+                  <ProtectedRoute allowedRoles={['customer']}>
+                    <AddressesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/account/orders"
+                element={
+                  <ProtectedRoute allowedRoles={['customer']}>
+                    <OrdersPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/account/orders/:orderId"
+                element={
+                  <ProtectedRoute allowedRoles={['customer']}>
+                    <OrderDetailsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/account/orders/:orderId/tracking"
+                element={
+                  <ProtectedRoute allowedRoles={['customer']}>
+                    <OrderTrackingPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Catch-all fallback */}
               <Route path="*" element={<HomePage />} />
             </Routes>
           </WishlistProvider>
