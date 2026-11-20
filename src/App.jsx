@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { CartProvider, useCart } from './context/CartContext'
 import { WishlistProvider, useWishlist } from './context/WishlistContext'
 import { AuthProvider } from './context/AuthContext'
@@ -29,6 +29,11 @@ import OrderTrackingPage from './pages/customer/OrderTrackingPage'
 import CheckoutPage from './pages/checkout/CheckoutPage'
 import PaymentPage from './pages/checkout/PaymentPage'
 import OrderConfirmationPage from './pages/checkout/OrderConfirmationPage'
+
+// Admin Dashboard Pages (Phase 5 - Step 7)
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminPlaceholderPage from './pages/admin/AdminPlaceholderPage'
+import AdminNotFound from './pages/admin/AdminNotFound'
 
 import { CheckCircle2 } from 'lucide-react'
 
@@ -145,7 +150,312 @@ export default function App() {
                   }
                 />
 
-                {/* Catch-all fallback */}
+                {/* ==================================================== */}
+                {/* Admin Dashboard Routes (Phase 5 - Step 7 Foundation) */}
+                {/* ==================================================== */}
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin', 'data_encoder']}>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/dashboard"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin', 'data_encoder']}>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Catalog & Inventory Routes (Admin & Data Encoder) */}
+                <Route
+                  path="/admin/products"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin', 'data_encoder']}>
+                      <AdminPlaceholderPage
+                        title="Product Catalog Management"
+                        description="View, filter, create, and update Ethiopian handcrafted cultural garments and modern attire."
+                        moduleKey="products"
+                        plannedFeatures={[
+                          'Product Listing with Search & Category Filters',
+                          'Add New Product Form with Amharic Localization',
+                          'SKU, Size, Color & Stock Management',
+                          'Image Gallery Upload & Thumbnail Manager',
+                          'Product Active / Inactive Status Toggles',
+                        ]}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/categories"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin', 'data_encoder']}>
+                      <AdminPlaceholderPage
+                        title="Category Hierarchy Management"
+                        description="Manage Ethiopian apparel categories, parent-child hierarchies, and cultural collections."
+                        moduleKey="categories"
+                        plannedFeatures={[
+                          'Category Tree & Ordering Control',
+                          'Cultural Banner Image Assignment',
+                          'Amharic Category Name Translation Support',
+                          'Category Activation and Product Count Badges',
+                        ]}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/inventory"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin', 'data_encoder']}>
+                      <AdminPlaceholderPage
+                        title="Inventory Control & Stock Adjustments"
+                        description="Monitor garment stock levels, low inventory warnings, and artisan restocking logs."
+                        moduleKey="inventory"
+                        plannedFeatures={[
+                          'Real-Time Stock Level Table with Status Indicators',
+                          'Manual Stock In / Stock Out Adjustments',
+                          'Low-Stock Threshold Configuration',
+                          'Artisan Supplier Batch Tracking',
+                        ]}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Sales & Administration Routes (Admin Only) */}
+                <Route
+                  path="/admin/orders"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminPlaceholderPage
+                        title="Customer Order Management"
+                        description="Review order pipeline, update fulfillment stages, and issue Ethiopian tax invoices."
+                        moduleKey="orders"
+                        plannedFeatures={[
+                          'Order Status Pipeline (Pending → Confirmed → Shipped → Delivered)',
+                          'Itemized Order Inspector & Packing Slip Generator',
+                          'Courier Assignment & Ethio Post Integration',
+                          'Customer Order Cancellation & Status History',
+                        ]}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/payments"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminPlaceholderPage
+                        title="Payment Verification & Approvals"
+                        description="Review customer Telebirr, CBE Birr, and Bank Transfer receipts and reconcile transactions."
+                        moduleKey="payments"
+                        plannedFeatures={[
+                          'Payment Slip Screenshot Modal Viewer',
+                          'Telebirr Transaction ID Verification',
+                          'CBE Birr & Bank Deposit Reconciliation',
+                          'Approve / Reject Action with Customer Notification',
+                        ]}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/shipments"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminPlaceholderPage
+                        title="Shipment & Logistics Dispatch"
+                        description="Manage local Addis Ababa courier handoffs and regional Ethio Post shipments."
+                        moduleKey="shipments"
+                        plannedFeatures={[
+                          'Dispatch Manifest Generation',
+                          'Tracking Number Assignment',
+                          'Courier Driver Delivery Contact Logs',
+                          'Delivery Milestone Timestamp Updates',
+                        ]}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/coupons"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminPlaceholderPage
+                        title="Coupons & Promotional Vouchers"
+                        description="Create discount codes, set percentage or fixed Birr reductions, and enforce expiration dates."
+                        moduleKey="coupons"
+                        plannedFeatures={[
+                          'Percentage & Fixed ETB Voucher Creator',
+                          'Usage Limits per Customer Account',
+                          'Minimum Cart Order Requirements',
+                          'Promotional Campaign Schedule Control',
+                        ]}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/customers"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminPlaceholderPage
+                        title="Customer Accounts Directory"
+                        description="Inspect registered customer profiles, address books, and cumulative spending metrics."
+                        moduleKey="customers"
+                        plannedFeatures={[
+                          'Customer Directory with Search & Filtering',
+                          'Customer Profile Details & Verification Badges',
+                          'Delivery Address Snapshot Inspector',
+                          'Order History & Lifetime Value (LTV) Metrics',
+                        ]}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/reviews"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminPlaceholderPage
+                        title="Product Reviews & Ratings"
+                        description="Moderate artisan garment customer reviews, star ratings, and buyer testimonials."
+                        moduleKey="reviews"
+                        plannedFeatures={[
+                          'Review Moderation Queue (Pending / Approved / Rejected)',
+                          'Customer Feedback Text & Rating Filter',
+                          'Spam & Inappropriate Content Flagging',
+                          'Featured Testimonial Assignment for Homepage',
+                        ]}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/messages"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminPlaceholderPage
+                        title="Contact & Support Inquiries"
+                        description="Manage customer inquiries submitted through the contact page and public channels."
+                        moduleKey="messages"
+                        plannedFeatures={[
+                          'Support Inbox with Unread Status Counters',
+                          'Message Response Tracking & Status Flags',
+                          'Customer Contact Information Viewer',
+                          'Archive & Export Support History',
+                        ]}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/users"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminPlaceholderPage
+                        title="Staff Users Management"
+                        description="Manage administrative accounts, assign Data Encoder privileges, and monitor staff activity."
+                        moduleKey="users"
+                        plannedFeatures={[
+                          'Staff Account Listing (Admins, Data Encoders)',
+                          'Invite New Administrative Staff Members',
+                          'Password Reset & Two-Factor Authentication Controls',
+                          'Account Deactivation & Session Invalidation',
+                        ]}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/roles"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminPlaceholderPage
+                        title="Roles & Permissions (RBAC)"
+                        description="Configure granular role-based access control and system authorization policies."
+                        moduleKey="roles"
+                        plannedFeatures={[
+                          'Role Definition Matrix (Admin, Data Encoder, Customer)',
+                          'Granular Permission Checkboxes per Resource',
+                          'Audit History of Permission Modifications',
+                          'Security Policy & Session Expiry Rules',
+                        ]}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/reports"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminPlaceholderPage
+                        title="Financial Reports & Analytics"
+                        description="Analyze e-commerce revenue, sales by category, and regional Ethiopian delivery volume."
+                        moduleKey="reports"
+                        plannedFeatures={[
+                          'Revenue vs. Profit Margin Breakdown in ETB',
+                          'Category Sales Distribution (Women Kemis, Men Attire, etc.)',
+                          'Customer Acquisition & Retention Cohorts',
+                          'Export Reports to CSV / Excel Formats',
+                        ]}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/settings"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminPlaceholderPage
+                        title="Global Store Configuration"
+                        description="Configure Ethiopian currency rules, VAT rates, free shipping thresholds, and business info."
+                        moduleKey="settings"
+                        plannedFeatures={[
+                          'Store Business Name, Logo, & Contact Numbers',
+                          'Currency Setting (ETB) & VAT Rate (15%) Rules',
+                          'Free Nationwide Shipping Threshold (2,000 ETB)',
+                          'Telebirr & CBE Birr Merchant Account Settings',
+                        ]}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/audit-logs"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminPlaceholderPage
+                        title="System Audit Trail Logs"
+                        description="Immutable chronological logs of administrative actions, status updates, and security events."
+                        moduleKey="audit-logs"
+                        plannedFeatures={[
+                          'Chronological Event Log with Actor, Action, & Resource',
+                          'Date Range & Event Severity Filtering',
+                          'Detailed JSON Payload Diff Inspector',
+                          'Export Log History for Compliance',
+                        ]}
+                      />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Admin Fallback 404 */}
+                <Route
+                  path="/admin/*"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin', 'data_encoder']}>
+                      <AdminNotFound />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Catch-all public fallback */}
                 <Route path="*" element={<HomePage />} />
               </Routes>
             </CheckoutProvider>
