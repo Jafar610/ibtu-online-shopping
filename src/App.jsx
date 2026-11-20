@@ -30,8 +30,10 @@ import CheckoutPage from './pages/checkout/CheckoutPage'
 import PaymentPage from './pages/checkout/PaymentPage'
 import OrderConfirmationPage from './pages/checkout/OrderConfirmationPage'
 
-// Admin Dashboard Pages (Phase 5 - Step 7)
+// Admin Dashboard Pages (Phase 5 - Step 7 & Step 8.1)
 import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminProductsPage from './pages/admin/AdminProductsPage'
+import AdminCategoriesPage from './pages/admin/AdminCategoriesPage'
 import AdminPlaceholderPage from './pages/admin/AdminPlaceholderPage'
 import AdminNotFound from './pages/admin/AdminNotFound'
 
@@ -175,18 +177,7 @@ export default function App() {
                   path="/admin/products"
                   element={
                     <ProtectedRoute allowedRoles={['admin', 'data_encoder']}>
-                      <AdminPlaceholderPage
-                        title="Product Catalog Management"
-                        description="View, filter, create, and update Ethiopian handcrafted cultural garments and modern attire."
-                        moduleKey="products"
-                        plannedFeatures={[
-                          'Product Listing with Search & Category Filters',
-                          'Add New Product Form with Amharic Localization',
-                          'SKU, Size, Color & Stock Management',
-                          'Image Gallery Upload & Thumbnail Manager',
-                          'Product Active / Inactive Status Toggles',
-                        ]}
-                      />
+                      <AdminProductsPage />
                     </ProtectedRoute>
                   }
                 />
@@ -194,17 +185,7 @@ export default function App() {
                   path="/admin/categories"
                   element={
                     <ProtectedRoute allowedRoles={['admin', 'data_encoder']}>
-                      <AdminPlaceholderPage
-                        title="Category Hierarchy Management"
-                        description="Manage Ethiopian apparel categories, parent-child hierarchies, and cultural collections."
-                        moduleKey="categories"
-                        plannedFeatures={[
-                          'Category Tree & Ordering Control',
-                          'Cultural Banner Image Assignment',
-                          'Amharic Category Name Translation Support',
-                          'Category Activation and Product Count Badges',
-                        ]}
-                      />
+                      <AdminCategoriesPage />
                     </ProtectedRoute>
                   }
                 />
