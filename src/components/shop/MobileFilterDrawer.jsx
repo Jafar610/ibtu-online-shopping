@@ -19,7 +19,18 @@ const PRODUCT_TYPES = [
   { id: 'isTraditional', label: 'Traditional' },
 ]
 
-export default function MobileFilterDrawer({ isOpen, onClose, filters, onFilterChange, onClearAll }) {
+export default function MobileFilterDrawer({
+  isOpen,
+  onClose,
+  filters,
+  onFilterChange,
+  onClearAll,
+  categories = null,
+}) {
+  const categoryOptions = categories && categories.length > 0
+    ? categories.map((c) => ({ id: c.slug || String(c.id), label: c.name }))
+    : CATEGORY_OPTIONS
+
   const toggleCategory = (catId) => {
     const current = filters.categories
     const updated = current.includes(catId)
@@ -70,7 +81,7 @@ export default function MobileFilterDrawer({ isOpen, onClose, filters, onFilterC
               Categories
             </h3>
             <div className="space-y-2">
-              {CATEGORY_OPTIONS.map((cat) => {
+              {categoryOptions.map((cat) => {
                 const isChecked = filters.categories.includes(cat.id)
                 return (
                   <label

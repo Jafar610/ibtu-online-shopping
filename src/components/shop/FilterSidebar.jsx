@@ -46,7 +46,12 @@ export default function FilterSidebar({
   onFilterChange,
   onClearAll,
   productCounts,
+  categories = null,
 }) {
+  const categoryOptions = categories && categories.length > 0
+    ? categories.map((c) => ({ id: c.slug || String(c.id), label: c.name }))
+    : CATEGORY_OPTIONS
+
   const toggleCategory = (catId) => {
     const current = filters.categories
     const updated = current.includes(catId)
@@ -91,7 +96,7 @@ export default function FilterSidebar({
         {/* Categories */}
         <FilterSection id="category" label="Categories">
           <div className="space-y-2">
-            {CATEGORY_OPTIONS.map((cat) => {
+            {categoryOptions.map((cat) => {
               const isChecked = filters.categories.includes(cat.id)
               const count = productCounts?.[cat.id] ?? 0
               return (

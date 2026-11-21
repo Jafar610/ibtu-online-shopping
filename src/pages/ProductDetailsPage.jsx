@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Star, Package, CheckCircle, XCircle } from 'lucide-react'
+import { Star, Package, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 
 import AnnouncementBar from '../components/layout/AnnouncementBar'
 import Navbar from '../components/layout/Navbar'
@@ -22,7 +22,7 @@ import ProductTabs from '../components/product-details/ProductTabs'
 import ProductReviews from '../components/product-details/ProductReviews'
 import RelatedProducts from '../components/product-details/RelatedProducts'
 
-import { products as allProducts } from '../data/products'
+import { productApi } from '../services/api/productApi'
 
 const RECENTLY_VIEWED_KEY = 'ibtu_recently_viewed'
 
@@ -44,45 +44,8 @@ function trackRecentlyViewed(productId) {
   }
 }
 
-function RecentlyViewedSection({ currentId }) {
-  const ids = getRecentlyViewed().filter((id) => id !== currentId)
-  const products = ids.map((id) => allProducts.find((p) => p.id === id || p.slug === id)).filter(Boolean).slice(0, 4)
-
-  if (products.length === 0) return null
-
-  return (
-    <section className="mt-10">
-      <h2 className="font-serif text-xl font-bold text-[#103321] mb-4">Recently Viewed</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        {products.map((p) => (
-          <Link key={p.id} to={`/product/${p.slug || p.id}`}>
-            <div className="group bg-white rounded-2xl border border-gray-100 p-3 shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer">
-              <div className="relative aspect-[4/5] rounded-xl overflow-hidden bg-[#F4F5F6] mb-2.5">
-                <img
-                  src={p.image}
-                  alt={p.name}
-                  loading="lazy"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-              </div>
-              <h4 className="text-xs font-bold text-gray-900 truncate group-hover:text-[#103321]">{p.name}</h4>
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-[11px] font-extrabold text-[#103321]">{p.price.toLocaleString()} ETB</span>
-                <div className="flex items-center gap-0.5">
-                  <Star className="w-2.5 h-2.5 fill-amber-400 stroke-amber-400" />
-                  <span className="text-[9px] font-semibold text-gray-600">{p.rating}</span>
-                </div>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </section>
-  )
-}
-
 function ProductPurchaseSection({ product }) {
-  const [selectedSize, setSelectedSize] = useState(null)
+  const [selectedSize, setSelectedSize] = useState(() => (product.sizes && product.sizes.length > 0 ? product.sizes[0] : null))
   const [selectedColor, setSelectedColor] = useState(() => (product.colors && product.colors.length > 0 ? product.colors[0] : null))
   const [quantity, setQuantity] = useState(1)
   const sizeRef = useRef(null)
@@ -91,11 +54,52 @@ function ProductPurchaseSection({ product }) {
     sizeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [])
 
-  const discount = product.originalPrice
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+  // Match selected variant
+  const matchedVariant = useMemo(() => {
+    if (!product?.variants || product.variants.length === 0) return null
+
+    // Exact match for both size and color
+    const exact = product.variants.find(
+      (v) =>
+        (!selectedSize || v.size === selectedSize) &&
+        (!selectedColor || v.color === selectedColor)
+    )
+    if (exact) return exact
+
+    // Match size only
+    const sizeMatch = product.variants.find((v) => !selectedSize || v.size === selectedSize)
+    if (sizeMatch) return sizeMatch
+
+    return product.variants[0]
+  }, [product.variants, selectedSize, selectedColor])
+
+  const currentPrice = matchedVariant?.effective_price ?? matchedVariant?.price ?? product.price
+  const currentOriginalPrice =
+    matchedVariant?.sale_price && matchedVariant?.price && matchedVariant.sale_price < matchedVariant.price
+      ? matchedVariant.price
+      : product.originalPrice
+
+  const isVariantInStock = matchedVariant ? matchedVariant.is_in_stock : product.inStock
+  const currentStockCount = matchedVariant ? matchedVariant.available_quantity : product.stockCount
+
+  const activeProduct = useMemo(
+    () => ({
+      ...product,
+      price: currentPrice,
+      originalPrice: currentOriginalPrice,
+      inStock: isVariantInStock,
+      stockCount: currentStockCount,
+      selectedVariant: matchedVariant,
+      sku: matchedVariant?.sku || product.sku || product.id,
+    }),
+    [product, currentPrice, currentOriginalPrice, isVariantInStock, currentStockCount, matchedVariant]
+  )
+
+  const discount = currentOriginalPrice
+    ? Math.round(((currentOriginalPrice - currentPrice) / currentOriginalPrice) * 100)
     : 0
 
-  const categoryLabel = product.category
+  const categoryLabel = (product.categoryName || product.category || 'Habesha Kemis')
     ?.replace(/-/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase())
 
@@ -104,7 +108,7 @@ function ProductPurchaseSection({ product }) {
       <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] gap-8 lg:gap-10">
         {/* LEFT: Image Gallery */}
         <div>
-          <ProductGallery product={product} />
+          <ProductGallery product={activeProduct} />
         </div>
 
         {/* RIGHT: Product Info */}
@@ -131,28 +135,30 @@ function ProductPurchaseSection({ product }) {
                 <Star
                   key={s}
                   className={`w-4 h-4 ${
-                    s <= Math.round(product.rating)
+                    s <= Math.round(product.rating || 5)
                       ? 'fill-amber-400 stroke-amber-400'
                       : 'fill-gray-100 stroke-gray-200'
                   }`}
                 />
               ))}
             </div>
-            <span className="text-sm font-bold text-gray-700">{product.rating}</span>
-            <span className="text-xs text-gray-400">({product.reviewsCount} reviews)</span>
+            <span className="text-sm font-bold text-gray-700">{product.rating || 4.8}</span>
+            <span className="text-xs text-gray-400">({product.reviewsCount || 0} reviews)</span>
             <span className="text-[10px] text-gray-300">|</span>
-            <span className="text-xs font-semibold text-gray-500">SKU: {product.id.toUpperCase()}</span>
+            <span className="text-xs font-semibold text-gray-500 font-mono">
+              SKU: {activeProduct.sku}
+            </span>
           </div>
 
           {/* Price */}
           <div className="flex items-baseline gap-3 flex-wrap">
             <span className="font-serif text-3xl font-extrabold text-[#103321]">
-              {product.price.toLocaleString()} ETB
+              {currentPrice.toLocaleString()} ETB
             </span>
-            {product.originalPrice && (
+            {currentOriginalPrice && (
               <>
                 <span className="text-base text-gray-400 line-through">
-                  {product.originalPrice.toLocaleString()} ETB
+                  {currentOriginalPrice.toLocaleString()} ETB
                 </span>
                 {discount > 0 && (
                   <span className="text-sm font-bold text-white bg-[#95C623] px-2.5 py-0.5 rounded-lg">
@@ -165,13 +171,13 @@ function ProductPurchaseSection({ product }) {
 
           {/* Stock status */}
           <div className="flex items-center gap-2">
-            {product.inStock ? (
+            {isVariantInStock ? (
               <>
                 <CheckCircle className="w-4 h-4 text-green-500" />
                 <span className="text-sm font-semibold text-green-600">In Stock</span>
-                {product.stockCount && product.stockCount <= 15 && (
+                {currentStockCount !== undefined && currentStockCount <= 10 && currentStockCount > 0 && (
                   <span className="text-xs text-orange-500 font-semibold">
-                    — Only {product.stockCount} left
+                    — Only {currentStockCount} left
                   </span>
                 )}
               </>
@@ -185,33 +191,37 @@ function ProductPurchaseSection({ product }) {
 
           {/* Short description */}
           <p className="text-sm text-gray-600 leading-relaxed border-t border-gray-100 pt-4">
-            {product.description}
+            {product.description || product.shortDescription}
           </p>
 
           {/* Divider */}
           <div className="border-t border-gray-100" />
 
           {/* Color selector */}
-          <ColorSelector
-            colors={product.colors}
-            selected={selectedColor}
-            onChange={setSelectedColor}
-          />
+          {product.colors && product.colors.length > 0 && (
+            <ColorSelector
+              colors={product.colors}
+              selected={selectedColor}
+              onChange={setSelectedColor}
+            />
+          )}
 
           {/* Size selector */}
-          <div ref={sizeRef}>
-            <SizeSelector
-              sizes={product.sizes}
-              selected={selectedSize}
-              onChange={setSelectedSize}
-            />
-          </div>
+          {product.sizes && product.sizes.length > 0 && (
+            <div ref={sizeRef}>
+              <SizeSelector
+                sizes={product.sizes}
+                selected={selectedSize}
+                onChange={setSelectedSize}
+              />
+            </div>
+          )}
 
           {/* Quantity selector */}
           <QuantitySelector
             quantity={quantity}
             onChange={setQuantity}
-            maxStock={product.stockCount || 99}
+            maxStock={currentStockCount || 99}
           />
 
           {/* Divider */}
@@ -220,7 +230,7 @@ function ProductPurchaseSection({ product }) {
           {/* Add to Cart / Buy Now + Trust badges */}
           <div data-product-actions>
             <ProductActions
-              product={product}
+              product={activeProduct}
               selectedSize={selectedSize}
               selectedColor={selectedColor}
               quantity={quantity}
@@ -235,7 +245,7 @@ function ProductPurchaseSection({ product }) {
         <div className="flex gap-3 max-w-sm mx-auto">
           <div className="flex-1">
             <p className="text-xs font-bold text-[#103321] truncate">{product.name}</p>
-            <p className="text-sm font-extrabold text-[#103321]">{product.price.toLocaleString()} ETB</p>
+            <p className="text-sm font-extrabold text-[#103321]">{currentPrice.toLocaleString()} ETB</p>
           </div>
           <button
             onClick={() => {
@@ -262,17 +272,63 @@ export default function ProductDetailsPage() {
   const [isAIChatOpen, setIsAIChatOpen] = useState(false)
   const [quickViewProduct, setQuickViewProduct] = useState(null)
 
-  // Find product by slug or id
-  const product = allProducts.find((p) => p.slug === slug || p.id === slug)
+  // API State
+  const [product, setProduct] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  // Track recently viewed on mount
   useEffect(() => {
-    if (product) {
-      trackRecentlyViewed(product.id)
-    }
-  }, [product])
+    let isMounted = true
+    setIsLoading(true)
+    setError(null)
 
-  if (!product) {
+    productApi
+      .getProductDetails(slug)
+      .then((data) => {
+        if (isMounted) {
+          setProduct(data)
+          if (data?.id) {
+            trackRecentlyViewed(data.id)
+          }
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          setError(err?.message || 'Product not found')
+          setProduct(null)
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [slug])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#F8F9FA]">
+        <AnnouncementBar currentLang={currentLang} onLanguageChange={setCurrentLang} />
+        <Navbar
+          onOpenSearch={() => setIsSearchOpen(true)}
+          onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+        />
+        <main className="flex-1 flex items-center justify-center py-20 px-4">
+          <div className="text-center space-y-3">
+            <Loader2 className="w-10 h-10 text-[#103321] animate-spin mx-auto" />
+            <p className="text-xs text-gray-500 font-semibold">Loading product details...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  if (error || !product) {
     return (
       <div className="min-h-screen flex flex-col bg-[#F8F9FA]">
         <AnnouncementBar currentLang={currentLang} onLanguageChange={setCurrentLang} />
@@ -286,7 +342,9 @@ export default function ProductDetailsPage() {
               <XCircle className="w-10 h-10 text-gray-300" />
             </div>
             <h2 className="font-serif text-2xl font-bold text-[#103321] mb-2">Product Not Found</h2>
-            <p className="text-gray-500 text-sm mb-6">The product you're looking for doesn't exist or has been removed.</p>
+            <p className="text-gray-500 text-sm mb-6">
+              The product you're looking for doesn't exist or is currently unavailable in our catalog.
+            </p>
             <Link
               to="/shop"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#95C623] text-[#103321] font-bold text-sm hover:bg-[#82ad1e] transition-colors"
@@ -300,7 +358,7 @@ export default function ProductDetailsPage() {
     )
   }
 
-  const categoryLabel = product.category
+  const categoryLabel = (product.categoryName || product.category || 'Habesha Kemis')
     ?.replace(/-/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase())
 
@@ -318,7 +376,6 @@ export default function ProductDetailsPage() {
 
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-
           {/* Breadcrumb */}
           <div className="bg-[#103321] rounded-2xl px-4 py-3 mb-6">
             <Breadcrumb
@@ -349,13 +406,6 @@ export default function ProductDetailsPage() {
             <RelatedProducts
               currentProduct={product}
               onQuickView={setQuickViewProduct}
-            />
-          </div>
-
-          {/* Recently Viewed */}
-          <div className="mb-20 lg:mb-6">
-            <RecentlyViewedSection
-              currentId={product.id}
             />
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Plus, Trash2, Image as ImageIcon, AlertCircle, Check, Layers } from 'lucide-react'
+import { X, Plus, Trash2, Image as ImageIcon, AlertCircle, Check, Upload, Loader2 } from 'lucide-react'
 
 const DEFAULT_DEMO_IMAGES = [
   'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80',
@@ -22,11 +22,21 @@ export default function ProductFormModal({
   const [name, setName] = useState(product?.name || '')
   const [amharicName, setAmharicName] = useState(product?.amharicName || '')
   const [slug, setSlug] = useState(product?.slug || '')
-  const [category, setCategory] = useState(product?.category || (categories[0]?.slug || 'habesha-kemis'))
+  const [categoryId, setCategoryId] = useState(() => {
+    if (product?.category_id) return product.category_id
+    if (product?.category) {
+      const match = categories.find((c) => c.slug === product.category || c.id === product.category)
+      if (match) return match.id
+    }
+    return categories[0]?.id || 1
+  })
   const [description, setDescription] = useState(product?.description || '')
-  const [fabric, setFabric] = useState(product?.fabric || '100% Handwoven Ethiopian Cotton')
+  const [shortDescription, setShortDescription] = useState(product?.shortDescription || '')
+  const [fabric, setFabric] = useState(product?.fabric || product?.material || '100% Handwoven Shemma Cotton')
+  const [careInstructions, setCareInstructions] = useState(product?.careInstructions || 'Dry clean or gentle hand wash with cold water')
   const [productStatus, setProductStatus] = useState(product?.productStatus || 'Active')
   const [badge, setBadge] = useState(product?.badge || '')
+  const [isFeatured, setIsFeatured] = useState(Boolean(product?.is_featured ?? product?.isFeatured ?? false))
 
   // Pricing & Base Inventory
   const [price, setPrice] = useState(product?.price || 3500)
@@ -34,8 +44,10 @@ export default function ProductFormModal({
   const [stockCount, setStockCount] = useState(product?.stockCount ?? 20)
   const [lowStockThreshold, setLowStockThreshold] = useState(product?.lowStockThreshold ?? 5)
 
-  // Images
+  // Images & File Upload
   const [image, setImage] = useState(product?.image || DEFAULT_DEMO_IMAGES[0])
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [filePreview, setFilePreview] = useState(null)
   const [additionalImages, setAdditionalImages] = useState(
     product?.images?.filter((img) => img !== product?.image) || []
   )
@@ -44,12 +56,22 @@ export default function ProductFormModal({
   // Variants
   const [variants, setVariants] = useState(() => {
     if (product?.variants && product.variants.length > 0) {
-      return product.variants
+      return product.variants.map((v, i) => ({
+        id: v.id || `var-${i + 1}`,
+        sku: v.sku || `IBTU-VAR-${Date.now()}-${i + 1}`,
+        size: v.size || 'M',
+        color: v.color || 'Traditional White',
+        price: Number(v.price) || (product?.price || 3500),
+        sale_price: v.sale_price !== null && v.sale_price !== undefined ? Number(v.sale_price) : undefined,
+        stockQuantity: v.stockQuantity ?? v.available_quantity ?? 10,
+        lowStockThreshold: v.low_stock_threshold ?? 2,
+        active: v.active !== undefined ? v.active : (v.is_active !== undefined ? Boolean(v.is_active) : true),
+      }))
     }
     return [
       {
         id: `var-init-1`,
-        sku: product?.sku ? `${product.sku}-M-1` : 'IBTU-KEMIS-M-1',
+        sku: product?.sku ? `${product.sku}-M-1` : `IBTU-KEMIS-M-${Date.now().toString().slice(-3)}`,
         size: 'M',
         color: 'Traditional White',
         price: product?.price || 3500,
@@ -59,7 +81,7 @@ export default function ProductFormModal({
       },
       {
         id: `var-init-2`,
-        sku: product?.sku ? `${product.sku}-L-1` : 'IBTU-KEMIS-L-1',
+        sku: product?.sku ? `${product.sku}-L-1` : `IBTU-KEMIS-L-${Date.now().toString().slice(-3)}`,
         size: 'L',
         color: 'Traditional White',
         price: product?.price || 3500,
@@ -71,6 +93,7 @@ export default function ProductFormModal({
   })
 
   const [errors, setErrors] = useState({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   if (!isOpen) return null
 
@@ -85,6 +108,28 @@ export default function ProductFormModal({
           .replace(/(^-|-$)+/g, '')
       )
     }
+  }
+
+  // File picker handler
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // 5MB limit check
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({ ...prev, image: 'File size exceeds 5MB limit.' }))
+      return
+    }
+
+    // MIME type check
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setErrors((prev) => ({ ...prev, image: 'Only JPEG, PNG, and WebP images are allowed.' }))
+      return
+    }
+
+    setErrors((prev) => ({ ...prev, image: null }))
+    setSelectedFile(file)
+    setFilePreview(URL.createObjectURL(file))
   }
 
   // Variant operations
@@ -116,7 +161,7 @@ export default function ProductFormModal({
     setVariants(variants.filter((_, idx) => idx !== index))
   }
 
-  // Image operations
+  // Additional Image operations
   const handleAddImage = (e) => {
     e.preventDefault()
     if (!newImageUrl.trim()) return
@@ -131,53 +176,75 @@ export default function ProductFormModal({
   const validate = () => {
     const errs = {}
     if (!name.trim()) errs.name = 'Product name is required.'
-    if (!category) errs.category = 'Category is required.'
+    if (!categoryId) errs.category = 'Category is required.'
     if (!price || Number(price) <= 0) errs.price = 'Valid price in ETB is required.'
     if (stockCount === '' || Number(stockCount) < 0) errs.stockCount = 'Valid stock count is required.'
-    if (!image.trim()) errs.image = 'Main product image URL is required.'
+    if (!selectedFile && !image.trim()) errs.image = 'Primary product image is required.'
+
+    // Validate SKU uniqueness inside variants
+    const skus = variants.map((v) => v.sku?.trim().toUpperCase())
+    const hasDuplicateSku = new Set(skus).size !== skus.length
+    if (hasDuplicateSku) {
+      errs.variants = 'Each variant must have a unique SKU identifier.'
+    }
 
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validate()) return
 
-    const totalVariantStock = variants.reduce((sum, v) => sum + (Number(v.stockQuantity) || 0), 0)
-    const finalStockCount = variants.length > 0 ? totalVariantStock : Number(stockCount)
+    setIsSubmitting(true)
 
-    const productPayload = {
-      id: product?.id || `prod-${Date.now()}`,
-      slug:
-        slug.trim() ||
-        name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)+/g, ''),
-      name: name.trim(),
-      amharicName: amharicName.trim() || null,
-      sku: product?.sku || `IBTU-${category.slice(0, 3).toUpperCase()}-${Date.now().toString().slice(-4)}`,
-      category,
-      price: Number(price),
-      originalPrice: originalPrice ? Number(originalPrice) : null,
-      stockCount: finalStockCount,
-      lowStockThreshold: Number(lowStockThreshold),
-      stockStatus: finalStockCount <= 0 ? 'Out of Stock' : finalStockCount <= Number(lowStockThreshold) ? 'Low Stock' : 'In Stock',
-      productStatus,
-      badge: badge.trim() || null,
-      description: description.trim(),
-      fabric: fabric.trim(),
-      image: image.trim(),
-      images: [image.trim(), ...additionalImages],
-      variants,
-      sizes: [...new Set(variants.map((v) => v.size))],
-      colors: [...new Set(variants.map((v) => v.color))],
-      inStock: finalStockCount > 0,
-      createdAt: product?.createdAt || new Date().toISOString(),
+    try {
+      const selectedCat = categories.find((c) => c.id === Number(categoryId)) || categories[0]
+      const totalVariantStock = variants.reduce((sum, v) => sum + (Number(v.stockQuantity) || 0), 0)
+      const finalStockCount = variants.length > 0 ? totalVariantStock : Number(stockCount)
+
+      const productPayload = {
+        id: product?.id,
+        category_id: Number(categoryId),
+        category: selectedCat?.slug || 'habesha-kemis',
+        categoryName: selectedCat?.name || 'Habesha Kemis',
+        name: name.trim(),
+        amharicName: amharicName.trim() || null,
+        slug:
+          slug.trim() ||
+          name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)+/g, ''),
+        shortDescription: shortDescription.trim() || description.trim().slice(0, 150),
+        description: description.trim(),
+        material: fabric.trim(),
+        fabric: fabric.trim(),
+        careInstructions: careInstructions.trim(),
+        status: productStatus.toLowerCase(),
+        productStatus,
+        is_featured: isFeatured,
+        isFeatured,
+        price: Number(price),
+        originalPrice: originalPrice ? Number(originalPrice) : null,
+        stockCount: finalStockCount,
+        lowStockThreshold: Number(lowStockThreshold),
+        image: filePreview || image.trim(),
+        images: [filePreview || image.trim(), ...additionalImages],
+        selectedFile,
+        variants: variants.map((v) => ({
+          ...v,
+          price: Number(v.price) || Number(price),
+          stock_quantity: Number(v.stockQuantity) || 0,
+          low_stock_threshold: Number(v.lowStockThreshold) || 2,
+          is_active: Boolean(v.active),
+        })),
+      }
+
+      await onSave(productPayload)
+    } finally {
+      setIsSubmitting(false)
     }
-
-    onSave(productPayload)
   }
 
   return (
@@ -272,12 +339,12 @@ export default function ProductFormModal({
                     Category <span className="text-red-500">*</span>
                   </label>
                   <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(Number(e.target.value))}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs bg-white focus:outline-hidden focus:border-[#103321] cursor-pointer"
                   >
                     {categories.map((cat) => (
-                      <option key={cat.id || cat.slug} value={cat.slug || cat.id}>
+                      <option key={cat.id} value={cat.id}>
                         {cat.name}
                       </option>
                     ))}
@@ -301,14 +368,14 @@ export default function ProductFormModal({
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Badge / Tag
+                    URL Slug
                   </label>
                   <input
                     type="text"
-                    value={badge}
-                    onChange={(e) => setBadge(e.target.value)}
-                    placeholder="e.g. New Arrival / 20% OFF"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-hidden focus:border-[#103321]"
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value)}
+                    placeholder="auto-generated-slug"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-mono focus:outline-hidden focus:border-[#103321]"
                   />
                 </div>
               </div>
@@ -317,7 +384,7 @@ export default function ProductFormModal({
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Price (ETB) <span className="text-red-500">*</span>
+                    Base Price (ETB) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -330,7 +397,7 @@ export default function ProductFormModal({
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">
-                    Sale / Original Price (ETB)
+                    Original Price (ETB)
                   </label>
                   <input
                     type="number"
@@ -366,31 +433,75 @@ export default function ProductFormModal({
                 </div>
               </div>
 
-              {/* Description & Fabric */}
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Product Description
-                </label>
-                <textarea
-                  rows={3}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Detailed description of the garment, weaving tradition, and occasion styling..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-hidden focus:border-[#103321]"
-                />
+              {/* Description & Short Description */}
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Short Summary
+                  </label>
+                  <input
+                    type="text"
+                    value={shortDescription}
+                    onChange={(e) => setShortDescription(e.target.value)}
+                    placeholder="Quick teaser sentence for catalog cards..."
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-hidden focus:border-[#103321]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Full Description
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Detailed description of the garment, weaving tradition, and occasion styling..."
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-hidden focus:border-[#103321]"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Fabric & Artisan Weave Details
+              {/* Material & Care */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Fabric & Material
+                  </label>
+                  <input
+                    type="text"
+                    value={fabric}
+                    onChange={(e) => setFabric(e.target.value)}
+                    placeholder="e.g. 100% Handwoven Shemma Cotton with Golden Silk Tibeb"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-hidden focus:border-[#103321]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Care Instructions
+                  </label>
+                  <input
+                    type="text"
+                    value={careInstructions}
+                    onChange={(e) => setCareInstructions(e.target.value)}
+                    placeholder="e.g. Gentle cold hand wash, line dry in shade"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-hidden focus:border-[#103321]"
+                  />
+                </div>
+              </div>
+
+              {/* Featured Checkbox */}
+              <div className="pt-2">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={isFeatured}
+                    onChange={(e) => setIsFeatured(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#103321] accent-[#103321]"
+                  />
+                  <span>Mark as Featured Product in Storefront</span>
                 </label>
-                <input
-                  type="text"
-                  value={fabric}
-                  onChange={(e) => setFabric(e.target.value)}
-                  placeholder="e.g. 100% Handwoven Shemma Cotton with Golden Silk Tibeb"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-hidden focus:border-[#103321]"
-                />
               </div>
             </div>
           )}
@@ -404,7 +515,7 @@ export default function ProductFormModal({
                     SKU & Variant Matrix
                   </h4>
                   <p className="text-xs text-gray-400">
-                    Define sizes, colors, individual SKU identifiers, and inventory quantities.
+                    Define sizes, colors, individual SKU identifiers, and stock quantities.
                   </p>
                 </div>
                 <button
@@ -416,6 +527,12 @@ export default function ProductFormModal({
                   <span>Add Variant</span>
                 </button>
               </div>
+
+              {errors.variants && (
+                <p className="text-xs text-red-500 font-semibold bg-red-50 p-2.5 rounded-xl border border-red-200">
+                  {errors.variants}
+                </p>
+              )}
 
               <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                 {variants.map((v, idx) => (
@@ -492,19 +609,43 @@ export default function ProductFormModal({
           {/* TAB 3: PRODUCT IMAGES */}
           {activeTab === 'images' && (
             <div className="space-y-4 animate-fadeIn">
+              {/* File upload option (Real backend Multer support) */}
+              <div className="p-4 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#95C623] transition-colors text-center">
+                <Upload className="w-8 h-8 text-[#103321] mx-auto mb-2 opacity-80" />
+                <p className="text-xs font-bold text-gray-700">Upload Image File (JPEG, PNG, WebP — Max 5MB)</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">Directly stored into backend uploads directory</p>
+                <label className="mt-3 inline-block px-4 py-2 rounded-xl bg-[#103321] text-white text-xs font-bold cursor-pointer hover:bg-[#1a4d35] transition-colors">
+                  <span>Browse Device Files</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+                {selectedFile && (
+                  <p className="text-xs text-emerald-600 font-semibold mt-2">
+                    ✓ Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(0)} KB)
+                  </p>
+                )}
+              </div>
+
+              {/* Or Paste URL */}
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">
-                  Primary Product Image URL <span className="text-red-500">*</span>
+                  Or Main Image URL
                 </label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={image}
-                    onChange={(e) => setImage(e.target.value)}
-                    placeholder="https://images.unsplash.com/..."
-                    className="flex-1 px-3.5 py-2 rounded-xl border border-gray-200 text-xs focus:outline-hidden focus:border-[#103321]"
-                  />
-                </div>
+                <input
+                  type="url"
+                  value={image}
+                  onChange={(e) => {
+                    setImage(e.target.value)
+                    setFilePreview(null)
+                    setSelectedFile(null)
+                  }}
+                  placeholder="https://..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-hidden focus:border-[#103321]"
+                />
                 {errors.image && <p className="text-[11px] text-red-500 mt-1">{errors.image}</p>}
               </div>
 
@@ -512,7 +653,7 @@ export default function ProductFormModal({
               <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-2xl border border-gray-200">
                 <div className="w-20 h-24 rounded-xl overflow-hidden bg-gray-200 border border-gray-300 shrink-0">
                   <img
-                    src={image}
+                    src={filePreview || image}
                     alt="Main Preview"
                     className="w-full h-full object-cover"
                     onError={(e) => {
@@ -577,16 +718,27 @@ export default function ProductFormModal({
             <button
               type="button"
               onClick={onClose}
+              disabled={isSubmitting}
               className="px-4 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl bg-[#103321] hover:bg-[#95C623] hover:text-[#103321] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+              disabled={isSubmitting}
+              className="px-6 py-2.5 rounded-xl bg-[#103321] hover:bg-[#95C623] hover:text-[#103321] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
-              <Check className="w-4 h-4 stroke-[2.5]" />
-              <span>{isEditing ? 'Save Product Changes' : 'Create Product'}</span>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 stroke-[2.5]" />
+                  <span>{isEditing ? 'Save Product Changes' : 'Create Product'}</span>
+                </>
+              )}
             </button>
           </div>
         </form>

@@ -12,7 +12,7 @@ import logoImg from '../../assets/logo.jpg'
 export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { login, isAuthenticated } = useAuth()
+  const { login, isAuthenticated, user } = useAuth()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -23,11 +23,17 @@ export default function Login() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      const from = location.state?.from?.pathname || '/'
-      navigate(from, { replace: true })
+    if (isAuthenticated && user) {
+      const from = location.state?.from?.pathname
+      if (from) {
+        navigate(from, { replace: true })
+      } else if (user.role === 'admin' || user.role === 'data_encoder') {
+        navigate('/admin/dashboard', { replace: true })
+      } else {
+        navigate('/account', { replace: true })
+      }
     }
-  }, [isAuthenticated, navigate, location])
+  }, [isAuthenticated, user, navigate, location])
 
   const validate = () => {
     const errs = {}
@@ -39,8 +45,6 @@ export default function Login() {
 
     if (!password) {
       errs.password = 'Password is required.'
-    } else if (password.length < 6) {
-      errs.password = 'Password must be at least 6 characters.'
     }
 
     setErrors(errs)
@@ -58,21 +62,32 @@ export default function Login() {
     const result = await login({ email, password, rememberMe })
     setLoading(false)
 
-    if (result.isDemo) {
-      setNotification({
-        type: 'info',
-        message: result.message,
-      })
-    } else if (result.success) {
+    if (result.success) {
+      const loggedUser = result.user
       setNotification({
         type: 'success',
-        message: `Welcome back, ${result.user?.name || result.user?.firstName || 'Customer'}! Redirecting...`,
+        message: `Welcome back, ${loggedUser?.name || loggedUser?.firstName || 'User'}! Redirecting...`,
       })
+
       setTimeout(() => {
-        const from = location.state?.from?.pathname || '/'
-        navigate(from, { replace: true })
+        const from = location.state?.from?.pathname
+        if (from) {
+          navigate(from, { replace: true })
+        } else if (loggedUser?.role === 'admin' || loggedUser?.role === 'data_encoder') {
+          navigate('/admin/dashboard', { replace: true })
+        } else {
+          navigate('/account', { replace: true })
+        }
       }, 700)
     } else {
+      if (Array.isArray(result.errors) && result.errors.length > 0) {
+        const fieldErrs = {}
+        result.errors.forEach((err) => {
+          if (err.field) fieldErrs[err.field] = err.message
+        })
+        setErrors(fieldErrs)
+      }
+
       setNotification({
         type: 'error',
         message: result.error || 'Invalid email or password. Please try again.',
@@ -80,14 +95,14 @@ export default function Login() {
     }
   }
 
-  // Helper for quick testing with sample customer
-  const handleFillDemo = () => {
-    setEmail('customer@ibtu.com')
-    setPassword('password123')
+  // Quick testing helper with seeded database accounts
+  const handleFillAdmin = () => {
+    setEmail('admin@ibtu.com')
+    setPassword('Admin@1234')
     setErrors({})
     setNotification({
-      type: 'success',
-      message: 'Demo credentials loaded! Click "Sign In" below.',
+      type: 'info',
+      message: 'Seeded Admin credentials loaded (admin@ibtu.com). Click "Sign In" below.',
     })
   }
 
@@ -104,7 +119,7 @@ export default function Login() {
               Welcome Back
             </h1>
             <p className="text-xs text-gray-500 mt-1">
-              Sign in to continue your shopping experience.
+              Sign in to continue to your IBTU account.
             </p>
           </div>
         </div>
@@ -129,7 +144,7 @@ export default function Login() {
               setEmail(e.target.value)
               if (errors.email) setErrors((prev) => ({ ...prev, email: null }))
             }}
-            placeholder="almaz@example.com"
+            placeholder="admin@ibtu.com or user@example.com"
             icon={Mail}
             error={errors.email}
             required
@@ -183,18 +198,18 @@ export default function Login() {
           </AuthButton>
         </form>
 
-        {/* Demo Account Helper */}
+        {/* Quick Testing Helper */}
         <div className="p-3 bg-[#95C623]/10 rounded-2xl border border-[#95C623]/25 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-xs text-[#103321]">
             <Sparkles className="w-4 h-4 text-[#95C623] shrink-0" />
-            <span className="font-semibold">Quick testing?</span>
+            <span className="font-semibold">Need test credentials?</span>
           </div>
           <button
             type="button"
-            onClick={handleFillDemo}
+            onClick={handleFillAdmin}
             className="text-xs font-bold text-[#103321] hover:text-[#95C623] underline cursor-pointer transition-colors"
           >
-            Auto-fill demo customer
+            Fill Seeded Admin
           </button>
         </div>
 

@@ -1,4 +1,15 @@
-const CATEGORIES = [
+import { useMemo } from 'react'
+
+const DEFAULT_ICONS = {
+  all: '🛍️',
+  'mens-collection': '👔',
+  'womens-collection': '👗',
+  'habesha-kemis': '🌿',
+  'traditional-wear': '🎋',
+  accessories: '💍',
+}
+
+const DEFAULT_CATEGORIES = [
   { id: 'all', label: 'All Products', amharic: 'ሁሉም ምርቶች', icon: '🛍️' },
   { id: 'mens-collection', label: "Men's Fashion", amharic: 'የወንዶች ልብስ', icon: '👔' },
   { id: 'womens-collection', label: "Women's Fashion", amharic: 'የሴቶች ልብስ', icon: '👗' },
@@ -7,12 +18,31 @@ const CATEGORIES = [
   { id: 'accessories', label: 'Accessories', amharic: 'ጌጣጌጥ', icon: '💍' },
 ]
 
-export default function CategoryNavigation({ selected, onChange }) {
+export default function CategoryNavigation({ selected, onChange, categories = null }) {
+  const categoryList = useMemo(() => {
+    if (!categories || categories.length === 0) {
+      return DEFAULT_CATEGORIES
+    }
+
+    const dynamicItems = categories.map((cat) => ({
+      id: cat.slug || String(cat.id),
+      label: cat.name,
+      amharic: cat.amharic_name || cat.amharicName || null,
+      icon: DEFAULT_ICONS[cat.slug] || '✨',
+      productCount: cat.product_count ?? cat.productCount,
+    }))
+
+    return [
+      { id: 'all', label: 'All Products', amharic: 'ሁሉም ምርቶች', icon: '🛍️' },
+      ...dynamicItems,
+    ]
+  }, [categories])
+
   return (
     <div className="bg-white border-b border-gray-100 sticky top-[57px] z-30 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-2">
-          {CATEGORIES.map((cat) => {
+          {categoryList.map((cat) => {
             const isActive = selected === cat.id
             return (
               <button
@@ -26,6 +56,11 @@ export default function CategoryNavigation({ selected, onChange }) {
               >
                 <span className="text-sm">{cat.icon}</span>
                 <span>{cat.label}</span>
+                {cat.productCount !== undefined && cat.productCount > 0 && (
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-[#103321]/20 text-[#103321]' : 'bg-gray-100 text-gray-500'}`}>
+                    {cat.productCount}
+                  </span>
+                )}
               </button>
             )
           })}
@@ -35,5 +70,4 @@ export default function CategoryNavigation({ selected, onChange }) {
   )
 }
 
-export { CATEGORIES }
-
+export { DEFAULT_CATEGORIES as CATEGORIES }

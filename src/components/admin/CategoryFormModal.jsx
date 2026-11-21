@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Check, AlertCircle, Layers } from 'lucide-react'
+import { X, Check, AlertCircle, Layers, Loader2 } from 'lucide-react'
 
 const DEFAULT_CATEGORY_IMAGES = [
   'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=800&q=80',
@@ -21,10 +21,11 @@ export default function CategoryFormModal({
   const [amharicName, setAmharicName] = useState(category?.amharicName || '')
   const [slug, setSlug] = useState(category?.slug || '')
   const [description, setDescription] = useState(category?.description || '')
-  const [parentCategory, setParentCategory] = useState(category?.parentCategory || '')
+  const [parentId, setParentId] = useState(category?.parent_id ? String(category.parent_id) : '')
   const [status, setStatus] = useState(category?.status || 'Active')
   const [image, setImage] = useState(category?.image || DEFAULT_CATEGORY_IMAGES[0])
   const [errors, setErrors] = useState({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   if (!isOpen) return null
 
@@ -48,7 +49,6 @@ export default function CategoryFormModal({
     if (!cleanSlug) {
       errs.slug = 'Category slug is required.'
     } else {
-      // Check duplicate slug among other categories
       const isDuplicate = existingCategories.some(
         (c) => c.slug.toLowerCase() === cleanSlug && (!isEditing || c.id !== category?.id)
       )
@@ -57,28 +57,37 @@ export default function CategoryFormModal({
       }
     }
 
+    if (parentId && isEditing && Number(parentId) === category?.id) {
+      errs.parent = 'A category cannot be its own parent.'
+    }
+
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validate()) return
 
-    const payload = {
-      id: category?.id || `cat-${Date.now()}`,
-      name: name.trim(),
-      amharicName: amharicName.trim() || null,
-      slug: slug.trim().toLowerCase(),
-      description: description.trim(),
-      parentCategory: parentCategory || null,
-      status,
-      image: image.trim(),
-      productCount: category?.productCount || 0,
-      featured: category?.featured ?? true,
-    }
+    setIsSubmitting(true)
+    try {
+      const payload = {
+        id: category?.id,
+        name: name.trim(),
+        amharicName: amharicName.trim() || null,
+        slug: slug.trim().toLowerCase(),
+        description: description.trim(),
+        parent_id: parentId ? Number(parentId) : null,
+        parentCategory: parentId ? existingCategories.find((c) => c.id === Number(parentId))?.slug : null,
+        status,
+        image: image.trim(),
+        image_url: image.trim(),
+      }
 
-    onSave(payload)
+      await onSave(payload)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -155,19 +164,20 @@ export default function CategoryFormModal({
                 Parent Category (Optional)
               </label>
               <select
-                value={parentCategory}
-                onChange={(e) => setParentCategory(e.target.value)}
+                value={parentId}
+                onChange={(e) => setParentId(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs bg-white focus:outline-hidden focus:border-[#103321] cursor-pointer"
               >
                 <option value="">None (Top-Level Category)</option>
                 {existingCategories
                   .filter((c) => !isEditing || c.id !== category?.id)
                   .map((c) => (
-                    <option key={c.id || c.slug} value={c.slug}>
+                    <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
                   ))}
               </select>
+              {errors.parent && <p className="text-[11px] text-red-500 mt-1">{errors.parent}</p>}
             </div>
 
             <div>
@@ -233,16 +243,27 @@ export default function CategoryFormModal({
             <button
               type="button"
               onClick={onClose}
+              disabled={isSubmitting}
               className="px-4 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-bold transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl bg-[#103321] hover:bg-[#95C623] hover:text-[#103321] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+              disabled={isSubmitting}
+              className="px-6 py-2.5 rounded-xl bg-[#103321] hover:bg-[#95C623] hover:text-[#103321] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
-              <Check className="w-4 h-4" />
-              <span>{isEditing ? 'Save Changes' : 'Create Category'}</span>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>{isEditing ? 'Save Changes' : 'Create Category'}</span>
+                </>
+              )}
             </button>
           </div>
         </form>

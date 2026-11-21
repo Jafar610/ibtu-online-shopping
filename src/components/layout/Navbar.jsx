@@ -8,7 +8,8 @@ import {
   Menu,
   ChevronDown,
 } from 'lucide-react'
-import { categories } from '../../data/categories'
+import { categories as defaultCategories } from '../../data/categories'
+import { categoryApi } from '../../services/api/categoryApi'
 import { useCart } from '../../context/CartContext'
 import { useWishlist } from '../../context/WishlistContext'
 import { useAuth } from '../../context/AuthContext'
@@ -27,10 +28,37 @@ export default function Navbar({
   const [isScrolled, setIsScrolled] = useState(false)
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false)
   const [isAccountOpen, setIsAccountOpen] = useState(false)
+  const [navCategories, setNavCategories] = useState(defaultCategories)
 
   const { totalItems, openCart } = useCart()
   const { wishlistCount } = useWishlist()
   const { user, isAuthenticated } = useAuth()
+
+  useEffect(() => {
+    let isMounted = true
+    categoryApi
+      .getCatalogCategories()
+      .then((cats) => {
+        if (isMounted && Array.isArray(cats) && cats.length > 0) {
+          const formatted = cats.map((c) => ({
+            id: c.id,
+            name: c.name,
+            slug: c.slug,
+            amharicName: c.amharic_name || c.amharicName || 'ሀበሻ ጥበብ',
+            image: c.image || defaultCategories[0]?.image,
+            itemCount: c.product_count ?? 0,
+          }))
+          setNavCategories(formatted)
+        }
+      })
+      .catch(() => {
+        // Fallback to default categories silently
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -147,10 +175,10 @@ export default function Navbar({
                     </div>
 
                     <div className="mt-1 space-y-1">
-                      {categories.map((cat) => (
-                        <a
+                      {navCategories.map((cat) => (
+                        <Link
                           key={cat.id}
-                          href={`#category-${cat.slug}`}
+                          to={`/shop?category=${cat.slug}`}
                           onClick={() => {
                             if (onSelectCategory) onSelectCategory(cat.slug)
                             setIsCategoriesOpen(false)
@@ -171,7 +199,7 @@ export default function Navbar({
                           <span className="text-[10px] bg-gray-100 group-hover:bg-[#95C623]/30 px-2 py-0.5 rounded-full font-medium text-gray-600">
                             {cat.itemCount}
                           </span>
-                        </a>
+                        </Link>
                       ))}
                     </div>
                   </div>

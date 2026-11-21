@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { Plus, Eye, Edit2, Trash2, Power, CheckCircle2, X, Shirt, AlertCircle } from 'lucide-react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
+import { Plus, Eye, Edit2, Trash2, Power, CheckCircle2, X, Shirt, AlertCircle, Loader2, RefreshCw } from 'lucide-react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import AdminPageHeader from '../../components/admin/AdminPageHeader'
 import AdminStatusBadge from '../../components/admin/AdminStatusBadge'
@@ -7,15 +7,15 @@ import ProductFilters from '../../components/admin/ProductFilters'
 import ProductFormModal from '../../components/admin/ProductFormModal'
 import ProductDetailsModal from '../../components/admin/ProductDetailsModal'
 import ConfirmDeleteModal from '../../components/admin/ConfirmDeleteModal'
-import {
-  getStoredAdminProducts,
-  saveStoredAdminProducts,
-  getStoredAdminCategories,
-} from '../../data/admin/adminCatalogData'
+
+import { productApi } from '../../services/api/productApi'
+import { categoryApi } from '../../services/api/categoryApi'
 
 export default function AdminProductsPage() {
-  const [products, setProducts] = useState(() => getStoredAdminProducts())
-  const [categories] = useState(() => getStoredAdminCategories())
+  const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('')
@@ -35,36 +35,68 @@ export default function AdminProductsPage() {
 
   const showFeedback = (type, message) => {
     setFeedback({ type, message })
-    setTimeout(() => setFeedback(null), 4000)
+    setTimeout(() => setFeedback(null), 5000)
   }
 
-  // Filter & Sort Logic
+  // Load Categories on mount
+  useEffect(() => {
+    let isMounted = true
+    categoryApi
+      .getCategories({ limit: 100 })
+      .then((res) => {
+        if (isMounted) {
+          setCategories(res.categories || [])
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to load categories for admin filter:', err)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  // Load Products from real backend API
+  const loadProducts = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const params = {
+        limit: 100,
+      }
+      if (searchQuery.trim()) {
+        params.search = searchQuery.trim()
+      }
+      if (selectedCategory !== 'all') {
+        const catObj = categories.find((c) => c.slug === selectedCategory || String(c.id) === selectedCategory)
+        if (catObj) params.category_id = catObj.id
+      }
+      if (selectedProductStatus !== 'all') {
+        params.status = selectedProductStatus.toLowerCase()
+      }
+
+      const res = await productApi.getAdminProducts(params)
+      setProducts(res.products || [])
+    } catch (err) {
+      setError(err?.message || 'Failed to load products from server.')
+      setProducts([])
+    } finally {
+      setIsLoading(false)
+    }
+  }, [searchQuery, selectedCategory, selectedProductStatus, categories])
+
+  useEffect(() => {
+    loadProducts()
+  }, [loadProducts])
+
+  // In-memory Filter & Sort Logic for client-side refinements (stock status and client sort)
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
-      // 1. Search filter (Name or SKU)
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim()
-        const matchesName = p.name?.toLowerCase().includes(q)
-        const matchesSku = p.sku?.toLowerCase().includes(q)
-        const matchesAmharic = p.amharicName?.includes(q)
-        if (!matchesName && !matchesSku && !matchesAmharic) return false
-      }
-
-      // 2. Category filter
-      if (selectedCategory !== 'all') {
-        if (p.category !== selectedCategory) return false
-      }
-
-      // 3. Product Status filter
-      if (selectedProductStatus !== 'all') {
-        if (p.productStatus !== selectedProductStatus) return false
-      }
-
-      // 4. Stock Status filter
+      // Stock Status filter
       if (selectedStockStatus !== 'all') {
         if (p.stockStatus !== selectedStockStatus) return false
       }
-
       return true
     }).sort((a, b) => {
       if (sortOption === 'price-low') return a.price - b.price
@@ -73,7 +105,7 @@ export default function AdminProductsPage() {
       // default: date-newest
       return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
     })
-  }, [products, searchQuery, selectedCategory, selectedProductStatus, selectedStockStatus, sortOption])
+  }, [products, selectedStockStatus, sortOption])
 
   const hasActiveFilters =
     searchQuery.trim() !== '' ||
@@ -100,39 +132,111 @@ export default function AdminProductsPage() {
     setFormModalOpen(true)
   }
 
-  const handleSaveProduct = (productPayload) => {
-    let updated = []
-    if (editingProduct) {
-      updated = products.map((p) => (p.id === productPayload.id ? productPayload : p))
-      showFeedback('success', `Product "${productPayload.name}" updated successfully.`)
-    } else {
-      updated = [productPayload, ...products]
-      showFeedback('success', `Product "${productPayload.name}" created successfully.`)
+  const handleSaveProduct = async (productPayload) => {
+    try {
+      if (editingProduct) {
+        // 1. Update Product
+        await productApi.updateProduct(editingProduct.id, productPayload)
+
+        // 2. Update or Create Variants
+        if (productPayload.variants && productPayload.variants.length > 0) {
+          for (const v of productPayload.variants) {
+            if (typeof v.id === 'number') {
+              try {
+                await productApi.updateVariant(v.id, {
+                  sku: v.sku,
+                  size: v.size,
+                  color: v.color,
+                  price: v.price,
+                  sale_price: v.sale_price,
+                  low_stock_threshold: v.low_stock_threshold,
+                  is_active: v.is_active,
+                })
+              } catch (varErr) {
+                console.warn('Could not update variant:', varErr)
+              }
+            } else {
+              try {
+                await productApi.createVariant(editingProduct.id, v)
+              } catch (varErr) {
+                console.warn('Could not create variant:', varErr)
+              }
+            }
+          }
+        }
+
+        // 3. Upload image file if provided
+        if (productPayload.selectedFile) {
+          try {
+            await productApi.uploadProductImage(editingProduct.id, productPayload.selectedFile, {
+              is_primary: true,
+            })
+          } catch (imgErr) {
+            console.warn('Could not upload image:', imgErr)
+          }
+        }
+
+        showFeedback('success', `Product "${productPayload.name}" updated successfully.`)
+      } else {
+        // 1. Create Product
+        const created = await productApi.createProduct(productPayload)
+        const newProductId = created.id
+
+        // 2. Create Variants
+        if (productPayload.variants && productPayload.variants.length > 0) {
+          for (const v of productPayload.variants) {
+            try {
+              await productApi.createVariant(newProductId, v)
+            } catch (varErr) {
+              console.warn('Could not create variant:', varErr)
+            }
+          }
+        }
+
+        // 3. Upload image file if provided
+        if (productPayload.selectedFile) {
+          try {
+            await productApi.uploadProductImage(newProductId, productPayload.selectedFile, {
+              is_primary: true,
+            })
+          } catch (imgErr) {
+            console.warn('Could not upload image:', imgErr)
+          }
+        }
+
+        showFeedback('success', `Product "${productPayload.name}" created successfully.`)
+      }
+
+      setFormModalOpen(false)
+      setEditingProduct(null)
+      await loadProducts()
+    } catch (err) {
+      showFeedback('error', err?.message || 'Failed to save product. Please verify permissions and input fields.')
     }
-
-    setProducts(updated)
-    saveStoredAdminProducts(updated)
-    setFormModalOpen(false)
-    setEditingProduct(null)
   }
 
-  const handleToggleStatus = (prod) => {
-    const nextStatus = prod.productStatus === 'Active' ? 'Draft' : 'Active'
-    const updated = products.map((p) =>
-      p.id === prod.id ? { ...p, productStatus: nextStatus } : p
-    )
-    setProducts(updated)
-    saveStoredAdminProducts(updated)
-    showFeedback('success', `Product "${prod.name}" status changed to ${nextStatus}.`)
+  const handleToggleStatus = async (prod) => {
+    try {
+      const nextStatus = prod.productStatus === 'Active' ? 'draft' : 'active'
+      await productApi.updateProductStatus(prod.id, nextStatus)
+      showFeedback('success', `Product "${prod.name}" status changed to ${nextStatus.toUpperCase()}.`)
+      await loadProducts()
+    } catch (err) {
+      showFeedback('error', err?.message || 'Failed to update product status.')
+    }
   }
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!deleteCandidate) return
-    const updated = products.filter((p) => p.id !== deleteCandidate.id)
-    setProducts(updated)
-    saveStoredAdminProducts(updated)
-    showFeedback('success', `Product "${deleteCandidate.name}" removed from catalog.`)
-    setDeleteCandidate(null)
+    try {
+      await productApi.deleteProduct(deleteCandidate.id)
+      showFeedback('success', `Product "${deleteCandidate.name}" removed from catalog.`)
+      setDeleteCandidate(null)
+      await loadProducts()
+    } catch (err) {
+      showFeedback('error', err?.message || 'Failed to delete product. It may be linked to active customer orders.')
+      setDeleteCandidate(null)
+    }
   }
 
   return (
@@ -166,7 +270,11 @@ export default function AdminProductsPage() {
             }`}
           >
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              {feedback.type === 'success' ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              )}
               <span>{feedback.message}</span>
             </div>
             <button
@@ -196,8 +304,29 @@ export default function AdminProductsPage() {
           hasActiveFilters={hasActiveFilters}
         />
 
+        {/* Error Alert */}
+        {error && (
+          <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-between text-xs text-rose-800">
+            <span>{error}</span>
+            <button
+              onClick={loadProducts}
+              className="inline-flex items-center gap-1 font-bold text-rose-700 underline"
+            >
+              <RefreshCw className="w-3 h-3" /> Retry
+            </button>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="p-12 text-center bg-white rounded-3xl border border-gray-100 shadow-xs">
+            <Loader2 className="w-8 h-8 text-[#103321] animate-spin mx-auto mb-2" />
+            <p className="text-xs text-gray-500 font-semibold">Loading product catalog...</p>
+          </div>
+        )}
+
         {/* Product Listing Table */}
-        {filteredProducts.length === 0 ? (
+        {!isLoading && filteredProducts.length === 0 ? (
           <div className="p-12 text-center bg-white rounded-3xl border border-gray-100 shadow-xs space-y-4">
             <div className="w-16 h-16 rounded-2xl bg-gray-100 text-gray-400 mx-auto flex items-center justify-center">
               <Shirt className="w-8 h-8" />
@@ -220,7 +349,7 @@ export default function AdminProductsPage() {
               </button>
             )}
           </div>
-        ) : (
+        ) : !isLoading && (
           <div className="bg-white rounded-3xl border border-gray-100 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs min-w-[750px]">
@@ -269,7 +398,7 @@ export default function AdminProductsPage() {
                       {/* Category */}
                       <td className="px-5 py-3.5">
                         <span className="inline-block px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 font-semibold capitalize">
-                          {prod.category?.replace('-', ' ')}
+                          {prod.categoryName || prod.category?.replace('-', ' ')}
                         </span>
                       </td>
 
@@ -385,7 +514,7 @@ export default function AdminProductsPage() {
         isOpen={Boolean(deleteCandidate)}
         title="Delete Product"
         message={`Are you sure you want to remove "${deleteCandidate?.name}" (${deleteCandidate?.sku}) from the catalog?`}
-        warning="This removes the item from the frontend catalog mock state."
+        warning="This removes the item permanently from the backend database."
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeleteCandidate(null)}
       />

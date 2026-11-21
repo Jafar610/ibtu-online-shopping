@@ -31,7 +31,7 @@ export default function Register() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/', { replace: true })
+      navigate('/account', { replace: true })
     }
   }, [isAuthenticated, navigate])
 
@@ -47,10 +47,14 @@ export default function Register() {
 
     if (!formData.firstName.trim()) {
       errs.firstName = 'First name is required.'
+    } else if (formData.firstName.trim().length < 2) {
+      errs.firstName = 'First name must be at least 2 characters.'
     }
 
     if (!formData.lastName.trim()) {
       errs.lastName = 'Last name is required.'
+    } else if (formData.lastName.trim().length < 2) {
+      errs.lastName = 'Last name must be at least 2 characters.'
     }
 
     if (!formData.email.trim()) {
@@ -59,16 +63,22 @@ export default function Register() {
       errs.email = 'Please enter a valid email address.'
     }
 
-    if (!formData.phone.trim()) {
-      errs.phone = 'Phone number is required.'
-    } else if (!/^[+0-9\s-]{9,16}$/.test(formData.phone.trim())) {
-      errs.phone = 'Please enter a valid phone number (e.g. +251 91 122 3344).'
+    if (formData.phone && formData.phone.trim()) {
+      if (!/^[+]?[0-9\s\-()]{7,25}$/.test(formData.phone.trim())) {
+        errs.phone = 'Please enter a valid phone number (e.g. +251 91 122 3344).'
+      }
     }
 
     if (!formData.password) {
       errs.password = 'Password is required.'
-    } else if (formData.password.length < 6) {
-      errs.password = 'Password must be at least 6 characters.'
+    } else if (formData.password.length < 8) {
+      errs.password = 'Password must be at least 8 characters long.'
+    } else if (!/[A-Z]/.test(formData.password)) {
+      errs.password = 'Password must contain at least one uppercase letter.'
+    } else if (!/[a-z]/.test(formData.password)) {
+      errs.password = 'Password must contain at least one lowercase letter.'
+    } else if (!/[0-9]/.test(formData.password)) {
+      errs.password = 'Password must contain at least one number.'
     }
 
     if (!formData.confirmPassword) {
@@ -99,23 +109,32 @@ export default function Register() {
       email: formData.email,
       phone: formData.phone,
       password: formData.password,
+      confirmPassword: formData.confirmPassword,
     })
     setLoading(false)
 
-    if (result.isDemo) {
-      setNotification({
-        type: 'info',
-        message: result.message,
-      })
-    } else if (result.success) {
+    if (result.success) {
       setNotification({
         type: 'success',
         message: `Account created successfully! Welcome to ibtu, ${result.user?.firstName || 'Customer'}! Redirecting...`,
       })
       setTimeout(() => {
-        navigate('/shop', { replace: true })
+        navigate('/account', { replace: true })
       }, 900)
     } else {
+      if (Array.isArray(result.errors) && result.errors.length > 0) {
+        const fieldErrs = {}
+        result.errors.forEach((err) => {
+          // Map backend field names (first_name -> firstName, confirm_password -> confirmPassword)
+          let key = err.field
+          if (key === 'first_name') key = 'firstName'
+          if (key === 'last_name') key = 'lastName'
+          if (key === 'confirm_password') key = 'confirmPassword'
+          fieldErrs[key] = err.message
+        })
+        setErrors((prev) => ({ ...prev, ...fieldErrs }))
+      }
+
       setNotification({
         type: 'error',
         message: result.error || 'Registration failed. Please check your details and try again.',
@@ -150,29 +169,30 @@ export default function Register() {
           />
         )}
 
-        {/* Customer Registration Form */}
-        <form onSubmit={handleSubmit} className="space-y-3.5">
+        {/* Registration Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* First & Last Name */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <AuthInput
               label="First Name"
-              id="register-firstname"
+              id="register-first-name"
               type="text"
               value={formData.firstName}
               onChange={(e) => handleChange('firstName', e.target.value)}
-              placeholder="Almaz"
+              placeholder="e.g. Almaz"
               icon={User}
               error={errors.firstName}
               required
               autoComplete="given-name"
             />
+
             <AuthInput
               label="Last Name"
-              id="register-lastname"
+              id="register-last-name"
               type="text"
               value={formData.lastName}
               onChange={(e) => handleChange('lastName', e.target.value)}
-              placeholder="Bekele"
+              placeholder="e.g. Bekele"
               icon={User}
               error={errors.lastName}
               required
@@ -204,18 +224,17 @@ export default function Register() {
             placeholder="+251 91 122 3344"
             icon={Phone}
             error={errors.phone}
-            required
             autoComplete="tel"
           />
 
           {/* Password */}
-          <div className="space-y-1">
+          <div className="space-y-2">
             <PasswordInput
-              label="Create Password"
+              label="Password"
               id="register-password"
               value={formData.password}
               onChange={(e) => handleChange('password', e.target.value)}
-              placeholder="At least 6 characters"
+              placeholder="Min. 8 chars (uppercase, lowercase, number)"
               error={errors.password}
               required
               autoComplete="new-password"
@@ -235,49 +254,51 @@ export default function Register() {
             autoComplete="new-password"
           />
 
-          {/* Terms and Conditions */}
-          <div className="pt-1">
-            <label className="flex items-start gap-2.5 cursor-pointer text-xs">
+          {/* Terms Agreement */}
+          <div>
+            <label className="flex items-start gap-2.5 cursor-pointer group">
               <input
                 type="checkbox"
                 checked={formData.agreeTerms}
                 onChange={(e) => handleChange('agreeTerms', e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-[#95C623] focus:ring-[#95C623] cursor-pointer mt-0.5"
+                className="w-4 h-4 mt-0.5 rounded border-gray-300 text-[#95C623] focus:ring-[#95C623] cursor-pointer"
               />
-              <span className="text-gray-600 leading-relaxed">
+              <span className="text-xs text-gray-600 leading-relaxed group-hover:text-gray-900 transition-colors">
                 I agree to the{' '}
-                <span className="text-[#103321] font-semibold underline">Terms & Conditions</span> and{' '}
-                <span className="text-[#103321] font-semibold underline">Privacy Policy</span>.
+                <Link to="/about" className="font-semibold text-[#103321] hover:underline">
+                  Terms of Service
+                </Link>{' '}
+                and{' '}
+                <Link to="/about" className="font-semibold text-[#103321] hover:underline">
+                  Privacy Policy
+                </Link>
+                .
               </span>
             </label>
             {errors.agreeTerms && (
-              <p className="text-[11px] font-medium text-red-500 mt-1">
-                ⚠ {errors.agreeTerms}
-              </p>
+              <p className="text-[11px] text-rose-500 mt-1 font-medium">{errors.agreeTerms}</p>
             )}
           </div>
 
-          {/* Submit Button */}
           <AuthButton
             type="submit"
             variant="forest"
             loading={loading}
             icon={UserPlus}
-            className="mt-2"
           >
             Create Customer Account
           </AuthButton>
         </form>
 
-        {/* Existing account link */}
-        <div className="border-t border-gray-100 pt-4 text-center">
+        {/* Divider */}
+        <div className="relative border-t border-gray-100 pt-4 text-center">
           <p className="text-xs text-gray-500">
-            Already have an ibtu account?{' '}
+            Already have an account?{' '}
             <Link
               to="/login"
               className="font-bold text-[#103321] hover:text-[#95C623] transition-colors underline underline-offset-2"
             >
-              Sign In
+              Sign In Instead
             </Link>
           </p>
         </div>
