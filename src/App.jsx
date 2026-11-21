@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { CartProvider, useCart } from './context/CartContext'
 import { WishlistProvider, useWishlist } from './context/WishlistContext'
 import { AuthProvider } from './context/AuthContext'
@@ -48,7 +48,15 @@ import AdminReviewsPage from './pages/admin/AdminReviewsPage'
 import AdminReviewDetailsPage from './pages/admin/AdminReviewDetailsPage'
 import AdminMessagesPage from './pages/admin/AdminMessagesPage'
 import AdminMessageDetailsPage from './pages/admin/AdminMessageDetailsPage'
-import AdminPlaceholderPage from './pages/admin/AdminPlaceholderPage'
+// Admin Management Pages (Phase 5 - Step 8.5)
+import AdminCouponsPage from './pages/admin/AdminCouponsPage'
+import AdminUsersPage from './pages/admin/AdminUsersPage'
+import AdminUserDetailsPage from './pages/admin/AdminUserDetailsPage'
+import AdminRolesPage from './pages/admin/AdminRolesPage'
+import AdminRoleDetailsPage from './pages/admin/AdminRoleDetailsPage'
+import AdminReportsPage from './pages/admin/AdminReportsPage'
+import AdminSettingsPage from './pages/admin/AdminSettingsPage'
+import AdminAuditLogsPage from './pages/admin/AdminAuditLogsPage'
 import AdminNotFound from './pages/admin/AdminNotFound'
 
 import { CheckCircle2 } from 'lucide-react'
@@ -273,17 +281,7 @@ export default function App() {
                   path="/admin/coupons"
                   element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                      <AdminPlaceholderPage
-                        title="Coupons & Promotional Vouchers"
-                        description="Create discount codes, set percentage or fixed Birr reductions, and enforce expiration dates."
-                        moduleKey="coupons"
-                        plannedFeatures={[
-                          'Percentage & Fixed ETB Voucher Creator',
-                          'Usage Limits per Customer Account',
-                          'Minimum Cart Order Requirements',
-                          'Promotional Campaign Schedule Control',
-                        ]}
-                      />
+                      <AdminCouponsPage />
                     </ProtectedRoute>
                   }
                 />
@@ -336,21 +334,20 @@ export default function App() {
                     </ProtectedRoute>
                   }
                 />
+                {/* Administration & System Routes (Admin Only - Phase 5 Step 8.5) */}
                 <Route
                   path="/admin/users"
                   element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                      <AdminPlaceholderPage
-                        title="Staff Users Management"
-                        description="Manage administrative accounts, assign Data Encoder privileges, and monitor staff activity."
-                        moduleKey="users"
-                        plannedFeatures={[
-                          'Staff Account Listing (Admins, Data Encoders)',
-                          'Invite New Administrative Staff Members',
-                          'Password Reset & Two-Factor Authentication Controls',
-                          'Account Deactivation & Session Invalidation',
-                        ]}
-                      />
+                      <AdminUsersPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/users/:userId"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminUserDetailsPage />
                     </ProtectedRoute>
                   }
                 />
@@ -358,17 +355,15 @@ export default function App() {
                   path="/admin/roles"
                   element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                      <AdminPlaceholderPage
-                        title="Roles & Permissions (RBAC)"
-                        description="Configure granular role-based access control and system authorization policies."
-                        moduleKey="roles"
-                        plannedFeatures={[
-                          'Role Definition Matrix (Admin, Data Encoder, Customer)',
-                          'Granular Permission Checkboxes per Resource',
-                          'Audit History of Permission Modifications',
-                          'Security Policy & Session Expiry Rules',
-                        ]}
-                      />
+                      <AdminRolesPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/roles/:roleId"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminRoleDetailsPage />
                     </ProtectedRoute>
                   }
                 />
@@ -376,17 +371,7 @@ export default function App() {
                   path="/admin/reports"
                   element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                      <AdminPlaceholderPage
-                        title="Financial Reports & Analytics"
-                        description="Analyze e-commerce revenue, sales by category, and regional Ethiopian delivery volume."
-                        moduleKey="reports"
-                        plannedFeatures={[
-                          'Revenue vs. Profit Margin Breakdown in ETB',
-                          'Category Sales Distribution (Women Kemis, Men Attire, etc.)',
-                          'Customer Acquisition & Retention Cohorts',
-                          'Export Reports to CSV / Excel Formats',
-                        ]}
-                      />
+                      <AdminReportsPage />
                     </ProtectedRoute>
                   }
                 />
@@ -394,17 +379,7 @@ export default function App() {
                   path="/admin/settings"
                   element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                      <AdminPlaceholderPage
-                        title="Global Store Configuration"
-                        description="Configure Ethiopian currency rules, VAT rates, free shipping thresholds, and business info."
-                        moduleKey="settings"
-                        plannedFeatures={[
-                          'Store Business Name, Logo, & Contact Numbers',
-                          'Currency Setting (ETB) & VAT Rate (15%) Rules',
-                          'Free Nationwide Shipping Threshold (2,000 ETB)',
-                          'Telebirr & CBE Birr Merchant Account Settings',
-                        ]}
-                      />
+                      <AdminSettingsPage />
                     </ProtectedRoute>
                   }
                 />
@@ -412,17 +387,7 @@ export default function App() {
                   path="/admin/audit-logs"
                   element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                      <AdminPlaceholderPage
-                        title="System Audit Trail Logs"
-                        description="Immutable chronological logs of administrative actions, status updates, and security events."
-                        moduleKey="audit-logs"
-                        plannedFeatures={[
-                          'Chronological Event Log with Actor, Action, & Resource',
-                          'Date Range & Event Severity Filtering',
-                          'Detailed JSON Payload Diff Inspector',
-                          'Export Log History for Compliance',
-                        ]}
-                      />
+                      <AdminAuditLogsPage />
                     </ProtectedRoute>
                   }
                 />

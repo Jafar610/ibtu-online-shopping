@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useMemo } from 'react'
 import { getStoredAddresses, getStoredOrders, saveStoredOrders } from '../data/customerData'
+import { getStoredAdminCoupons } from '../data/admin/adminAdministrationData'
 
 const CheckoutContext = createContext()
 
@@ -96,8 +97,47 @@ export function CheckoutProvider({ children }) {
       return { success: false, message: 'Please enter a coupon code.' }
     }
     const cleanCode = rawCode.trim().toUpperCase()
-    const coupon = MOCK_COUPONS[cleanCode]
 
+    // 1. Check live admin coupon store first
+    try {
+      const adminCoupons = getStoredAdminCoupons()
+      const found = adminCoupons.find((c) => c.code.toUpperCase() === cleanCode)
+      if (found) {
+        if (!found.isActive) {
+          return { success: false, message: `Coupon "${found.code}" is currently inactive.` }
+        }
+        const now = new Date()
+        now.setHours(0, 0, 0, 0)
+        if (found.expirationDate && new Date(found.expirationDate) < now) {
+          return { success: false, message: `Coupon "${found.code}" expired on ${found.expirationDate}.` }
+        }
+
+        const couponObj = {
+          code: found.code,
+          type: found.type,
+          value: found.value,
+          minOrderAmount: found.minOrderAmount || 0,
+          maxDiscountAmount: found.maxDiscountAmount || null,
+          description: found.description || `${found.value}${found.type === 'percent' ? '%' : ' ETB'} off`,
+        }
+
+        setAppliedCoupon(couponObj)
+        try {
+          localStorage.setItem(STORAGE_KEY_COUPON, JSON.stringify(couponObj))
+        } catch {
+          // ignore
+        }
+        return {
+          success: true,
+          message: `Coupon "${found.code}" applied! (${couponObj.description})`,
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading stored coupons during checkout validation', e)
+    }
+
+    // 2. Fallback to hardcoded mock coupons if store lookup unavailable
+    const coupon = MOCK_COUPONS[cleanCode]
     if (coupon) {
       setAppliedCoupon(coupon)
       try {
