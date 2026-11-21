@@ -27,16 +27,16 @@ export default function ProductActions({
     return true
   }
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!validate()) return
-    addToCart(product, quantity, selectedSize, selectedColor)
+    await addToCart(product, quantity, selectedSize, selectedColor)
     setIsAdded(true)
     setTimeout(() => setIsAdded(false), 2000)
   }
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
     if (!validate()) return
-    addToCart(product, quantity, selectedSize, selectedColor)
+    await addToCart(product, quantity, selectedSize, selectedColor)
     openCart()
   }
 

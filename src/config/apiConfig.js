@@ -16,6 +16,10 @@ export const AUTH_STORAGE_KEYS = {
   USER: 'ibtu_auth_user',
 }
 
+export const CART_STORAGE_KEYS = {
+  GUEST_TOKEN: 'ibtu_guest_cart_token',
+}
+
 /**
  * Derives the server base URL without the trailing `/api` (for static uploads)
  */
@@ -80,5 +84,13 @@ export const API_ENDPOINTS = {
     CREATE: '/categories',
     UPDATE: (id) => `/categories/${id}`,
     DELETE: (id) => `/categories/${id}`,
+  },
+  CART: {
+    GET: '/cart',
+    ADD_ITEM: '/cart/items',
+    UPDATE_ITEM: (id) => `/cart/items/${id}`,
+    REMOVE_ITEM: (id) => `/cart/items/${id}`,
+    CLEAR: '/cart',
+    MERGE: '/cart/merge',
   },
 }

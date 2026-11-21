@@ -19,6 +19,8 @@ export default function CartDrawer() {
     remainingForFreeShipping,
     clearCart,
     showNotification,
+    isLoading,
+    isUpdating,
   } = useCart()
 
   const { toggleWishlist } = useWishlist()
@@ -108,7 +110,14 @@ export default function CartDrawer() {
 
           {/* Cart Item List */}
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
-            {cartItems.length === 0 ? (
+            {isLoading && cartItems.length === 0 ? (
+              <div className="text-center py-20">
+                <div className="w-12 h-12 rounded-full bg-gray-100 text-[#95C623] mx-auto flex items-center justify-center mb-4">
+                  <div className="w-6 h-6 border-2 border-[#103321] border-t-transparent rounded-full animate-spin" />
+                </div>
+                <p className="text-sm text-gray-500 font-medium">Loading your shopping bag...</p>
+              </div>
+            ) : cartItems.length === 0 ? (
               <div className="text-center py-20">
                 <div className="w-16 h-16 rounded-full bg-gray-100 text-gray-400 mx-auto flex items-center justify-center mb-4">
                   <ShoppingBag className="w-8 h-8" />
@@ -169,6 +178,16 @@ export default function CartDrawer() {
                       <p className="text-xs text-gray-500 mt-0.5">
                         Size: {item.size} {item.color ? `• ${item.color}` : ''}
                       </p>
+                      {!item.is_available && (
+                        <span className="inline-block mt-1 text-[10px] text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded font-semibold">
+                          Currently unavailable
+                        </span>
+                      )}
+                      {item.is_available && !item.is_in_stock && (
+                        <span className="inline-block mt-1 text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded font-semibold">
+                          Out of stock
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between mt-3">

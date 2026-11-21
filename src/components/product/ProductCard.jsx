@@ -9,9 +9,9 @@ export default function ProductCard({ product, onQuickView }) {
   const navigate = useNavigate()
   const [isAdded, setIsAdded] = useState(false)
 
-  const handleAddToCart = (e) => {
+  const handleAddToCart = async (e) => {
     e.stopPropagation()
-    addToCart(product, 1)
+    await addToCart(product, 1)
     setIsAdded(true)
     setTimeout(() => setIsAdded(false), 1600)
   }

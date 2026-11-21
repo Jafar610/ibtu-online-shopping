@@ -38,6 +38,8 @@ export default function CartPage() {
     removeFromCart,
     clearCart,
     showNotification,
+    isLoading,
+    isUpdating,
   } = useCart()
 
   const { toggleWishlist, isInWishlist } = useWishlist()
@@ -129,7 +131,12 @@ export default function CartPage() {
         {/* Cart Content Section */}
         <section className="py-8 sm:py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {cartItems.length === 0 ? (
+            {isLoading && cartItems.length === 0 ? (
+              <div className="max-w-lg mx-auto text-center py-20 px-6 bg-white rounded-3xl border border-gray-100 shadow-sm space-y-4">
+                <RefreshCw className="w-8 h-8 text-[#95C623] animate-spin mx-auto" />
+                <p className="text-sm font-semibold text-gray-600">Loading your shopping cart...</p>
+              </div>
+            ) : cartItems.length === 0 ? (
               /* EMPTY CART STATE */
               <div className="max-w-lg mx-auto text-center py-14 px-6 bg-white rounded-3xl border border-gray-100 shadow-sm space-y-6 animate-fadeIn">
                 <div className="w-20 h-20 rounded-full bg-[#95C623]/20 text-[#103321] mx-auto flex items-center justify-center">
@@ -270,9 +277,21 @@ export default function CartPage() {
                                   </span>
                                 )}
                                 <span className="text-[10px] text-gray-400">
-                                  SKU: {String(item.id).toUpperCase()}
+                                  SKU: {String(item.sku || item.id).toUpperCase()}
                                 </span>
                               </div>
+
+                              {/* Availability Badges */}
+                              {!item.is_available && (
+                                <span className="inline-block text-[11px] text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded font-semibold mt-1">
+                                  Currently unavailable
+                                </span>
+                              )}
+                              {item.is_available && !item.is_in_stock && (
+                                <span className="inline-block text-[11px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-semibold mt-1">
+                                  Out of stock (available: {item.stockCount})
+                                </span>
+                              )}
 
                               {/* Unit Price */}
                               <p className="text-xs text-gray-500 pt-0.5">
