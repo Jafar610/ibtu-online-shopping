@@ -85,6 +85,13 @@ export const ADMIN_NAV_GROUPS = [
         badge: '5 Low',
         badgeColor: 'rose',
       },
+      {
+        id: 'inventory-movements',
+        label: 'Stock Movements',
+        path: '/admin/inventory/movements',
+        icon: 'ScrollText',
+        roles: ['admin', 'data_encoder'],
+      },
     ],
   },
   {

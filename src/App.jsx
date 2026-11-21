@@ -30,10 +30,12 @@ import CheckoutPage from './pages/checkout/CheckoutPage'
 import PaymentPage from './pages/checkout/PaymentPage'
 import OrderConfirmationPage from './pages/checkout/OrderConfirmationPage'
 
-// Admin Dashboard Pages (Phase 5 - Step 7 & Step 8.1)
+// Admin Dashboard Pages (Phase 5 - Step 7, 8.1 & 8.2)
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminProductsPage from './pages/admin/AdminProductsPage'
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage'
+import AdminInventoryPage from './pages/admin/AdminInventoryPage'
+import AdminInventoryMovementsPage from './pages/admin/AdminInventoryMovementsPage'
 import AdminPlaceholderPage from './pages/admin/AdminPlaceholderPage'
 import AdminNotFound from './pages/admin/AdminNotFound'
 
@@ -193,17 +195,15 @@ export default function App() {
                   path="/admin/inventory"
                   element={
                     <ProtectedRoute allowedRoles={['admin', 'data_encoder']}>
-                      <AdminPlaceholderPage
-                        title="Inventory Control & Stock Adjustments"
-                        description="Monitor garment stock levels, low inventory warnings, and artisan restocking logs."
-                        moduleKey="inventory"
-                        plannedFeatures={[
-                          'Real-Time Stock Level Table with Status Indicators',
-                          'Manual Stock In / Stock Out Adjustments',
-                          'Low-Stock Threshold Configuration',
-                          'Artisan Supplier Batch Tracking',
-                        ]}
-                      />
+                      <AdminInventoryPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/inventory/movements"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin', 'data_encoder']}>
+                      <AdminInventoryMovementsPage />
                     </ProtectedRoute>
                   }
                 />
