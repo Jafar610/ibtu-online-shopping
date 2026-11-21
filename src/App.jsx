@@ -30,12 +30,18 @@ import CheckoutPage from './pages/checkout/CheckoutPage'
 import PaymentPage from './pages/checkout/PaymentPage'
 import OrderConfirmationPage from './pages/checkout/OrderConfirmationPage'
 
-// Admin Dashboard Pages (Phase 5 - Step 7, 8.1 & 8.2)
+// Admin Dashboard Pages (Phase 5 - Step 7, 8.1, 8.2 & 8.3)
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminProductsPage from './pages/admin/AdminProductsPage'
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage'
 import AdminInventoryPage from './pages/admin/AdminInventoryPage'
 import AdminInventoryMovementsPage from './pages/admin/AdminInventoryMovementsPage'
+import AdminOrdersPage from './pages/admin/AdminOrdersPage'
+import AdminOrderDetailsPage from './pages/admin/AdminOrderDetailsPage'
+import AdminPaymentsPage from './pages/admin/AdminPaymentsPage'
+import AdminPaymentDetailsPage from './pages/admin/AdminPaymentDetailsPage'
+import AdminShipmentsPage from './pages/admin/AdminShipmentsPage'
+import AdminShipmentDetailsPage from './pages/admin/AdminShipmentDetailsPage'
 import AdminPlaceholderPage from './pages/admin/AdminPlaceholderPage'
 import AdminNotFound from './pages/admin/AdminNotFound'
 
@@ -208,22 +214,20 @@ export default function App() {
                   }
                 />
 
-                {/* Sales & Administration Routes (Admin Only) */}
+                {/* Sales & Administration Routes (Admin Only - Phase 5 Step 8.3) */}
                 <Route
                   path="/admin/orders"
                   element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                      <AdminPlaceholderPage
-                        title="Customer Order Management"
-                        description="Review order pipeline, update fulfillment stages, and issue Ethiopian tax invoices."
-                        moduleKey="orders"
-                        plannedFeatures={[
-                          'Order Status Pipeline (Pending → Confirmed → Shipped → Delivered)',
-                          'Itemized Order Inspector & Packing Slip Generator',
-                          'Courier Assignment & Ethio Post Integration',
-                          'Customer Order Cancellation & Status History',
-                        ]}
-                      />
+                      <AdminOrdersPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/orders/:orderId"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminOrderDetailsPage />
                     </ProtectedRoute>
                   }
                 />
@@ -231,17 +235,15 @@ export default function App() {
                   path="/admin/payments"
                   element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                      <AdminPlaceholderPage
-                        title="Payment Verification & Approvals"
-                        description="Review customer Telebirr, CBE Birr, and Bank Transfer receipts and reconcile transactions."
-                        moduleKey="payments"
-                        plannedFeatures={[
-                          'Payment Slip Screenshot Modal Viewer',
-                          'Telebirr Transaction ID Verification',
-                          'CBE Birr & Bank Deposit Reconciliation',
-                          'Approve / Reject Action with Customer Notification',
-                        ]}
-                      />
+                      <AdminPaymentsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/payments/:paymentId"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminPaymentDetailsPage />
                     </ProtectedRoute>
                   }
                 />
@@ -249,17 +251,15 @@ export default function App() {
                   path="/admin/shipments"
                   element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                      <AdminPlaceholderPage
-                        title="Shipment & Logistics Dispatch"
-                        description="Manage local Addis Ababa courier handoffs and regional Ethio Post shipments."
-                        moduleKey="shipments"
-                        plannedFeatures={[
-                          'Dispatch Manifest Generation',
-                          'Tracking Number Assignment',
-                          'Courier Driver Delivery Contact Logs',
-                          'Delivery Milestone Timestamp Updates',
-                        ]}
-                      />
+                      <AdminShipmentsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/shipments/:shipmentId"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminShipmentDetailsPage />
                     </ProtectedRoute>
                   }
                 />

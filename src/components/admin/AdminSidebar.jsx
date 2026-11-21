@@ -91,6 +91,7 @@ export default function AdminSidebar({ isCollapsed = false, onCloseMobile }) {
                 const Icon = ICON_MAP[item.icon] || LayoutDashboard
                 const isActive =
                   location.pathname === item.path ||
+                  (item.path !== '/admin/dashboard' && location.pathname.startsWith(`${item.path}/`)) ||
                   (item.path === '/admin/dashboard' && location.pathname === '/admin')
 
                 return (

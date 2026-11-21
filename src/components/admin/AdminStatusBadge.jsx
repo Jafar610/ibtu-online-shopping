@@ -55,9 +55,16 @@ export default function AdminStatusBadge({ status, type = 'order' }) {
   if (type === 'payment') {
     switch (s) {
       case 'paid':
+      case 'successful':
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-            Paid
+            {status}
+          </span>
+        )
+      case 'processing':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80">
+            Processing
           </span>
         )
       case 'pending':
@@ -78,10 +85,77 @@ export default function AdminStatusBadge({ status, type = 'order' }) {
             Failed
           </span>
         )
+      case 'cancelled':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+            Cancelled
+          </span>
+        )
       case 'refunded':
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
             Refunded
+          </span>
+        )
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-700">
+            {status}
+          </span>
+        )
+    }
+  }
+
+  // 3. Shipment Status Styling
+  if (type === 'shipment') {
+    switch (s) {
+      case 'delivered':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+            Delivered
+          </span>
+        )
+      case 'out for delivery':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-cyan-100 text-cyan-800 border border-cyan-200">
+            Out for Delivery
+          </span>
+        )
+      case 'in transit':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+            In Transit
+          </span>
+        )
+      case 'shipped':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-100 text-sky-800 border border-sky-200">
+            Shipped
+          </span>
+        )
+      case 'processing':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+            Processing
+          </span>
+        )
+      case 'pending':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+            Pending
+          </span>
+        )
+      case 'returned':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
+            Returned
+          </span>
+        )
+      case 'failed':
+      case 'cancelled':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+            {status}
           </span>
         )
       default:
