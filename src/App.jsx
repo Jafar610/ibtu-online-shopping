@@ -30,7 +30,7 @@ import CheckoutPage from './pages/checkout/CheckoutPage'
 import PaymentPage from './pages/checkout/PaymentPage'
 import OrderConfirmationPage from './pages/checkout/OrderConfirmationPage'
 
-// Admin Dashboard Pages (Phase 5 - Step 7, 8.1, 8.2 & 8.3)
+// Admin Dashboard Pages (Phase 5 - Step 7, 8.1, 8.2, 8.3 & 8.4)
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminProductsPage from './pages/admin/AdminProductsPage'
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage'
@@ -42,6 +42,12 @@ import AdminPaymentsPage from './pages/admin/AdminPaymentsPage'
 import AdminPaymentDetailsPage from './pages/admin/AdminPaymentDetailsPage'
 import AdminShipmentsPage from './pages/admin/AdminShipmentsPage'
 import AdminShipmentDetailsPage from './pages/admin/AdminShipmentDetailsPage'
+import AdminCustomersPage from './pages/admin/AdminCustomersPage'
+import AdminCustomerDetailsPage from './pages/admin/AdminCustomerDetailsPage'
+import AdminReviewsPage from './pages/admin/AdminReviewsPage'
+import AdminReviewDetailsPage from './pages/admin/AdminReviewDetailsPage'
+import AdminMessagesPage from './pages/admin/AdminMessagesPage'
+import AdminMessageDetailsPage from './pages/admin/AdminMessageDetailsPage'
 import AdminPlaceholderPage from './pages/admin/AdminPlaceholderPage'
 import AdminNotFound from './pages/admin/AdminNotFound'
 
@@ -281,21 +287,20 @@ export default function App() {
                     </ProtectedRoute>
                   }
                 />
+                {/* Customers & Engagement Routes (Admin Only - Phase 5 Step 8.4) */}
                 <Route
                   path="/admin/customers"
                   element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                      <AdminPlaceholderPage
-                        title="Customer Accounts Directory"
-                        description="Inspect registered customer profiles, address books, and cumulative spending metrics."
-                        moduleKey="customers"
-                        plannedFeatures={[
-                          'Customer Directory with Search & Filtering',
-                          'Customer Profile Details & Verification Badges',
-                          'Delivery Address Snapshot Inspector',
-                          'Order History & Lifetime Value (LTV) Metrics',
-                        ]}
-                      />
+                      <AdminCustomersPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/customers/:customerId"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminCustomerDetailsPage />
                     </ProtectedRoute>
                   }
                 />
@@ -303,17 +308,15 @@ export default function App() {
                   path="/admin/reviews"
                   element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                      <AdminPlaceholderPage
-                        title="Product Reviews & Ratings"
-                        description="Moderate artisan garment customer reviews, star ratings, and buyer testimonials."
-                        moduleKey="reviews"
-                        plannedFeatures={[
-                          'Review Moderation Queue (Pending / Approved / Rejected)',
-                          'Customer Feedback Text & Rating Filter',
-                          'Spam & Inappropriate Content Flagging',
-                          'Featured Testimonial Assignment for Homepage',
-                        ]}
-                      />
+                      <AdminReviewsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/reviews/:reviewId"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminReviewDetailsPage />
                     </ProtectedRoute>
                   }
                 />
@@ -321,17 +324,15 @@ export default function App() {
                   path="/admin/messages"
                   element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                      <AdminPlaceholderPage
-                        title="Contact & Support Inquiries"
-                        description="Manage customer inquiries submitted through the contact page and public channels."
-                        moduleKey="messages"
-                        plannedFeatures={[
-                          'Support Inbox with Unread Status Counters',
-                          'Message Response Tracking & Status Flags',
-                          'Customer Contact Information Viewer',
-                          'Archive & Export Support History',
-                        ]}
-                      />
+                      <AdminMessagesPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/messages/:messageId"
+                  element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminMessageDetailsPage />
                     </ProtectedRoute>
                   }
                 />

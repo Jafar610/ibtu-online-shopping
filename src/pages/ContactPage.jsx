@@ -100,8 +100,32 @@ export default function ContactPage() {
     setIsSubmitting(true)
     setSubmitError(null)
 
-    // Simulate mock submission delay
+    // Simulate mock submission delay and persist to admin contact messages
     setTimeout(() => {
+      try {
+        const raw = localStorage.getItem('ibtu_admin_contact_messages')
+        const existing = raw ? JSON.parse(raw) : []
+        const newMsg = {
+          id: `MSG-2026-${String(existing.length + 1).padStart(3, '0')}`,
+          senderName: formData.fullName.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim(),
+          subject: formData.subject.trim(),
+          message: formData.message.trim(),
+          submissionDate: new Date().toISOString(),
+          status: 'New',
+          assignedTo: 'Admin Support',
+          adminNotes: 'Submitted via public Contact Us form.',
+          replies: [],
+        }
+        localStorage.setItem(
+          'ibtu_admin_contact_messages',
+          JSON.stringify([newMsg, ...existing])
+        )
+      } catch {
+        // ignore
+      }
+
       setIsSubmitting(false)
       setIsSubmitted(true)
     }, 700)

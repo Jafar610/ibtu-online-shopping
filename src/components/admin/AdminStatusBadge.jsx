@@ -167,7 +167,7 @@ export default function AdminStatusBadge({ status, type = 'order' }) {
     }
   }
 
-  // 3. Stock Status Styling
+  // 4. Stock Status Styling
   if (type === 'stock') {
     switch (s) {
       case 'in stock':
@@ -186,6 +186,102 @@ export default function AdminStatusBadge({ status, type = 'order' }) {
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
             Out of Stock
+          </span>
+        )
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-700">
+            {status}
+          </span>
+        )
+    }
+  }
+
+  // 5. Customer Account Status Styling
+  if (type === 'account') {
+    switch (s) {
+      case 'active':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            Active
+          </span>
+        )
+      case 'inactive':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-600 border border-gray-200">
+            Inactive
+          </span>
+        )
+      case 'suspended':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+            Suspended
+          </span>
+        )
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-700">
+            {status}
+          </span>
+        )
+    }
+  }
+
+  // 6. Review Moderation Status Styling
+  if (type === 'review') {
+    switch (s) {
+      case 'approved':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+            Approved
+          </span>
+        )
+      case 'pending':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">
+            Pending
+          </span>
+        )
+      case 'rejected':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+            Rejected
+          </span>
+        )
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-700">
+            {status}
+          </span>
+        )
+    }
+  }
+
+  // 7. Contact Message Status Styling
+  if (type === 'message') {
+    switch (s) {
+      case 'new':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#95C623]/20 text-[#103321] border border-[#95C623]/40">
+            New
+          </span>
+        )
+      case 'in progress':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+            In Progress
+          </span>
+        )
+      case 'resolved':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+            Resolved
+          </span>
+        )
+      case 'closed':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-700 border border-gray-200">
+            Closed
           </span>
         )
       default:
